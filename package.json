@@ -4,7 +4,7 @@
   "description": "��#\u0000 \u0000g\u0000e\u0000s\u0000t\u0000i\u0000o\u0000n\u0000-\u0000r\u0000e\u0000n\u0000d\u0000e\u0000z\u0000-\u0000v\u0000o\u0000u\u0000s\u0000\r\u0000 \u0000",
   "main": "index.js",
   "scripts": {
-        "start": "nodemon server.js",
+    "start": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -27,6 +27,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.13.1",
     "mongoose": "^8.10.1",
+    "mongoose-sequence": "^6.0.1",
     "nodemailer": "^6.10.0"
   },
   "devDependencies": {
