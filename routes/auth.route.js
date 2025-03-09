@@ -7,10 +7,9 @@ const bcryptjs = require('bcryptjs');
 
 const router = express.Router();
 
-// REGISTER: Create a new user with role specification
 router.post('/register', async (req, res) => {
   try {
-    const { nom, email, pwd, role = 'CLIENT' } = req.body; // Default role is CLIENT
+    const { nom, email, pwd, role = 'CLIENT', specialite } = req.body; // Include specialite
 
     // Basic validation
     if (!nom || !email || !pwd) {
@@ -20,6 +19,12 @@ router.post('/register', async (req, res) => {
     // Ensure role is valid
     if (!['ADMIN', 'PROFESSIONNEL', 'CLIENT'].includes(role)) {
       return res.status(400).send({ message: "Invalid role. Choose from 'ADMIN', 'PROFESSIONNEL', or 'CLIENT'." });
+    }
+
+    // Check if the email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).send({ message: "Email already in use. Please choose another one." });
     }
 
     // Hash the password before saving
@@ -37,7 +42,12 @@ router.post('/register', async (req, res) => {
       const admin = new Admin({ userId: user._id });
       await admin.save();
     } else if (role === 'PROFESSIONNEL') {
-      const professionnel = new Professionnel({ userId: user._id });
+      // Check if specialite is required and pass it
+      if (!specialite) {
+        return res.status(400).send({ message: "Specialite is required for PROFESSIONNEL." });
+      }
+
+      const professionnel = new Professionnel({ userId: user._id, specialite });
       await professionnel.save();
     }
 
@@ -46,5 +56,6 @@ router.post('/register', async (req, res) => {
     res.status(500).send({ message: error.message });
   }
 });
+
 
 module.exports = router;
