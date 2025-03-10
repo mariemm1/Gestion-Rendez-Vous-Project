@@ -4,10 +4,10 @@ const Client = require("../models/client");
 const Professionnel = require("../models/professionnel");
 const router = express.Router();
 
-// CREATE: Client make a new rendezvous
+// CREATE: Client makes a new rendezvous
 router.post("/prendre/:clientId", async (req, res) => {
   try {
-    const { date, heure, professionnel_id, calendrier } = req.body;
+    const { date, heure, professionnel_id } = req.body;
     const { clientId } = req.params;
 
     // Find the client and professional
@@ -22,16 +22,19 @@ router.post("/prendre/:clientId", async (req, res) => {
       return res.status(404).send({ message: "Professionnel not found" });
     }
 
-    // Create a new rendezvous for the client
+    // Create a new rendezvous
     const newRendezVous = new RendezVous({
       date,
       heure,
       client_id: clientId,
       professionnel_id: professionnel_id,
-      calendrier,
     });
 
     await newRendezVous.save();
+
+    // ✅ Add rendezvous to client's history
+    client.historiqueRendezVous.push(newRendezVous._id);
+    await client.save();
 
     res.status(201).send({ message: "Rendezvous taken successfully", rendezvous: newRendezVous });
   } catch (error) {
@@ -39,18 +42,40 @@ router.post("/prendre/:clientId", async (req, res) => {
   }
 });
 
-// DELETE: Client cancel an existing rendezvous
+// UPDATE: Client cancels an existing rendezvous (changes status to "annulé")
+router.put("/annuler/:clientId/:rendezvousId", async (req, res) => {
+  try {
+    const { clientId, rendezvousId } = req.params;
+
+    // Find the rendezvous
+    const rendezvous = await RendezVous.findById(rendezvousId);
+    if (!rendezvous) {
+      return res.status(404).send({ message: "Rendezvous not found" });
+    }
+
+    // Ensure that the rendezvous belongs to the client
+    if (!rendezvous.client_id.equals(clientId)) {
+      return res.status(403).send({ message: "You can only cancel your own rendezvous" });
+    }
+
+    // ✅ Change the status to "annulé"
+    rendezvous.statut = "Annulé";
+    await rendezvous.save();
+
+    res.status(200).send({ message: "Rendezvous annulé successfully", rendezvous });
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+});
+
+
+
+// DELETE: Client deletes an annulé rendezvous
 router.delete("/annuler/:clientId/:rendezvousId", async (req, res) => {
   try {
     const { clientId, rendezvousId } = req.params;
 
-    // Find the client
-    const client = await Client.findById(clientId);
-    if (!client) {
-      return res.status(404).send({ message: "Client not found" });
-    }
-
-    // Find the rendezvous by ID
+    // Find the rendezvous
     const rendezvous = await RendezVous.findById(rendezvousId);
     if (!rendezvous) {
       return res.status(404).send({ message: "Rendezvous not found" });
@@ -58,17 +83,34 @@ router.delete("/annuler/:clientId/:rendezvousId", async (req, res) => {
 
     // Check if the rendezvous belongs to the client
     if (!rendezvous.client_id.equals(clientId)) {
-      return res.status(403).send({ message: "You can only cancel your own rendezvous" });
+      return res.status(403).send({ message: "You can only delete your own rendezvous" });
     }
 
-    // Delete the rendezvous
+    // ✅ Ensure the rendezvous is "annulé"
+    if (rendezvous.statut !== "Annulé") {
+      return res.status(400).send({ message: "Only annulé rendezvous can be deleted" });
+    }
+
+    // Find the client
+    const client = await Client.findById(clientId);
+    if (!client) {
+      return res.status(404).send({ message: "Client not found" });
+    }
+
+    // ✅ Remove rendezvous from client's history
+    client.historiqueRendezVous = client.historiqueRendezVous.filter(id => id.toString() !== rendezvousId);
+    await client.save();
+
+    // ✅ Delete the rendezvous
     await RendezVous.findByIdAndDelete(rendezvousId);
 
-    res.status(200).send({ message: "Rendezvous cancelled successfully" });
+    res.status(200).send({ message: "Rendezvous deleted successfully" });
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
 });
+
+
 
 // READ: Get all rendezvous for a specific client
 router.get("/client/:clientId", async (req, res) => {
