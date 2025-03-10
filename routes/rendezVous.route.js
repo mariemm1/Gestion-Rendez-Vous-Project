@@ -2,72 +2,74 @@ const express = require("express");
 const RendezVous = require("../models/rendezVous");
 const Client = require("../models/client");
 const Professionnel = require("../models/professionnel");
+const Notification = require("../models/notification");
+
 const router = express.Router();
 
-// CREATE: Client makes a new rendezvous
+// Ajouter une notification lors de la prise de rendez-vous
 router.post("/prendre/:clientId", async (req, res) => {
   try {
     const { date, heure, professionnel_id } = req.body;
     const { clientId } = req.params;
 
-    // Find the client and professional
     const client = await Client.findById(clientId);
     const professionnel = await Professionnel.findById(professionnel_id);
 
-    if (!client) {
-      return res.status(404).send({ message: "Client not found" });
+    if (!client || !professionnel) {
+      return res.status(404).send({ message: "Client ou professionnel non trouvé" });
     }
 
-    if (!professionnel) {
-      return res.status(404).send({ message: "Professionnel not found" });
-    }
-
-    // Create a new rendezvous
     const newRendezVous = new RendezVous({
       date,
       heure,
       client_id: clientId,
       professionnel_id: professionnel_id,
+      statut: "En attente",
     });
 
     await newRendezVous.save();
 
-    // ✅ Add rendezvous to client's history
     client.historiqueRendezVous.push(newRendezVous._id);
     await client.save();
 
-    res.status(201).send({ message: "Rendezvous taken successfully", rendezvous: newRendezVous });
+    await new Notification({
+      type: "Rendez-vous",
+      role: "PROFESSIONNEL",
+      message: `Un client (${client.nom}) a pris un rendez-vous le ${date} à ${heure}.`,
+      utilisateur_id: professionnel_id,
+    }).save();
+
+    res.status(201).json({ message: "Rendez-vous pris avec succès.", rendezvous: newRendezVous });
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
 });
 
-// UPDATE: Client cancels an existing rendezvous (changes status to "annulé")
+// Annulation de rendez-vous
 router.put("/annuler/:clientId/:rendezvousId", async (req, res) => {
   try {
     const { clientId, rendezvousId } = req.params;
-
-    // Find the rendezvous
     const rendezvous = await RendezVous.findById(rendezvousId);
-    if (!rendezvous) {
-      return res.status(404).send({ message: "Rendezvous not found" });
+
+    if (!rendezvous || !rendezvous.client_id.equals(clientId)) {
+      return res.status(404).json({ message: "Rendez-vous non trouvé ou non autorisé" });
     }
 
-    // Ensure that the rendezvous belongs to the client
-    if (!rendezvous.client_id.equals(clientId)) {
-      return res.status(403).send({ message: "You can only cancel your own rendezvous" });
-    }
-
-    // ✅ Change the status to "annulé"
     rendezvous.statut = "Annulé";
     await rendezvous.save();
 
-    res.status(200).send({ message: "Rendezvous annulé successfully", rendezvous });
+    await new Notification({
+      type: "Annulation",
+      role: "PROFESSIONNEL",
+      message: `Le client a annulé son rendez-vous prévu le ${rendezvous.date} à ${rendezvous.heure}.`,
+      utilisateur_id: rendezvous.professionnel_id,
+    }).save();
+
+    res.status(200).json({ message: "Rendez-vous annulé avec succès" });
   } catch (error) {
-    res.status(500).send({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
-
 
 
 // DELETE: Client deletes an annulé rendezvous
@@ -86,7 +88,7 @@ router.delete("/annuler/:clientId/:rendezvousId", async (req, res) => {
       return res.status(403).send({ message: "You can only delete your own rendezvous" });
     }
 
-    // ✅ Ensure the rendezvous is "annulé"
+    // Ensure the rendezvous is "annulé"
     if (rendezvous.statut !== "Annulé") {
       return res.status(400).send({ message: "Only annulé rendezvous can be deleted" });
     }
@@ -97,11 +99,11 @@ router.delete("/annuler/:clientId/:rendezvousId", async (req, res) => {
       return res.status(404).send({ message: "Client not found" });
     }
 
-    // ✅ Remove rendezvous from client's history
+    //  Remove rendezvous from client's history
     client.historiqueRendezVous = client.historiqueRendezVous.filter(id => id.toString() !== rendezvousId);
     await client.save();
 
-    // ✅ Delete the rendezvous
+    //  Delete the rendezvous
     await RendezVous.findByIdAndDelete(rendezvousId);
 
     res.status(200).send({ message: "Rendezvous deleted successfully" });
@@ -120,22 +122,6 @@ router.get("/client/:clientId", async (req, res) => {
     
     if (!rendezvousList) {
       return res.status(404).send({ message: "No rendezvous found for this client" });
-    }
-
-    res.status(200).send(rendezvousList);
-  } catch (error) {
-    res.status(500).send({ message: error.message });
-  }
-});
-
-// READ: Get all rendezvous for a specific professional
-router.get("/professionnel/:professionnelId", async (req, res) => {
-  try {
-    const { professionnelId } = req.params;
-    const rendezvousList = await RendezVous.find({ professionnel_id: professionnelId }).populate("client_id");
-    
-    if (!rendezvousList) {
-      return res.status(404).send({ message: "No rendezvous found for this professionnel" });
     }
 
     res.status(200).send(rendezvousList);
