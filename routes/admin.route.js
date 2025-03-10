@@ -1,7 +1,8 @@
 const express = require("express");
 const admin = express.Router('../models/admin');
-const admin = require("../models/admin");
+const user = require("../models/user");
 const bcryptjs = require('bcryptjs'); 
+const { Admin } = require("mongodb");
 const router = express.Router();
 
 
@@ -12,7 +13,7 @@ router.post('/create', async (req, res) => {
 
     // Create the user with default role "ADMIN"
     const hashedPwd = await bcryptjs.hash(pwd, 10); // Hash the password
-    const admin = new Admin({ nom, email, pwd: hashedPwd, role: "ADMIN" });
+    const user = new User({ nom, email, pwd: hashedPwd, role: "ADMIN" });
 
     await user.save(); 
 
@@ -48,8 +49,8 @@ router.get('/:nom', async (req, res) => {
       }
   
       // Find the Admin using the user ID
-      const client = await Client.findOne({ userId: user._id }).populate('userId');
-      if (!client) {
+      const admin = await Admin.findOne({ userId: user._id }).populate('userId');
+      if (!admin) {
         return res.status(404).send({ message: "Admin not found" });
       }
   
@@ -70,7 +71,7 @@ router.put('/:email', async (req, res) => {
       }
   
       // Find the Admin associated with the user
-      const Aamin = await Admin.findOne({ userId: user._id }).populate('userId');
+      const admin = await Admin.findOne({ userId: user._id }).populate('userId');
       if (!admin) {
         return res.status(404).send({ message: "Admin not found" });
       }

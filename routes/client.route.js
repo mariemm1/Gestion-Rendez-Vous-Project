@@ -4,6 +4,7 @@ const User = require('../models/user');  // Import User model for reference
 const bcryptjs = require('bcryptjs'); 
 const router = express.Router();
 
+
 // CREATE: Create a new client (first create a user and then create a client)
 router.post('/create', async (req, res) => {
   try {
