@@ -1,15 +1,12 @@
 const mongoose = require("mongoose");
 
 const notificationSchema = new mongoose.Schema({
-  type: { 
-    type: String, 
-    enum: ["Réservation", "Annulation", "Modification", "Rappel", "Confirmation", "Rendez-vous proche"], 
-    required: true 
-  },
+  utilisateur_id: { type: mongoose.Schema.Types.ObjectId, ref: "Utilisateur", required: true },
+  role: { type: String, enum: ["CLIENT", "PROFESSIONNEL"], required: true }, // Ajout du rôle
+  type: { type: String, enum: ["Rendez-vous", "Annulation", "Rappel"], required: true },
   message: { type: String, required: true },
-  dateEnvoi: { type: Date, default: Date.now },
-  utilisateur_id: { type: mongoose.Schema.Types.ObjectId, ref: "Utilisateur", required: true }, // Linked to User
-  envoyePar_admin: { type: Boolean, default: false },
+  lue: { type: Boolean, default: false },
+  dateEnvoi: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model("Notification", notificationSchema);

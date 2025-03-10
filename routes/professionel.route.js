@@ -1,28 +1,36 @@
 const express = require("express");
-const Professionnel = express.Router('../models/professionnel');
+const Professionnel = require("../models/professionnel"); // Correct import
 const User = require("../models/user");
-const bcryptjs = require('bcryptjs'); 
-const { Professionnel } = require("mongodb");
+const bcryptjs = require('bcryptjs');
 const router = express.Router();
-
-
 
 router.post('/create', async (req, res) => {
   try {
-    const { nom, email, pwd } = req.body;
+    const { nom, email, pwd, specialite, disponibilites } = req.body;
 
-    
-    const hashedPwd = await bcryptjs.hash(pwd, 10); // Hash the password
+    // Vérification que tous les champs requis sont fournis
+    if (!nom || !email || !pwd || !specialite) {
+      return res.status(400).send({ message: "Tous les champs sont obligatoires (nom, email, pwd, specialite)." });
+    }
+
+    // Hashage du mot de passe
+    const hashedPwd = await bcryptjs.hash(pwd, 10);
+
+    // Créer un utilisateur avec le rôle 'PROFESSIONNEL'
     const user = new User({ nom, email, pwd: hashedPwd, role: "PROFESSIONNEL" });
+    await user.save();  // Sauvegarder l'utilisateur dans la base de données
 
-    await user.save(); 
+    // Créer un professionnel avec les informations de l'utilisateur créé
+    const newProfessionnel = new Professionnel({
+      userId: user._id,  // Associer le professionnel à l'utilisateur
+      specialite: specialite,  // Spécialité du professionnel
+      disponibilites: disponibilites || []  // Si aucune disponibilité n'est fournie, un tableau vide est utilisé
+    });
 
-    
-    const newProfessionnel = new Professionnel({ userId: user._id, historiqueRendezVous: historiqueRendezVous || [] });
+    await newProfessionnel.save();  // Sauvegarder le professionnel dans la base de données
 
-    await newProfessionnel.save(); 
-
-    res.status(201).send({ message: "Professionnel saved successfully", professionnel: newProfessionnel });
+    // Réponse après la création du professionnel
+    res.status(201).send({ message: "Professionnel ajouté avec succès", professionnel: newProfessionnel });
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
@@ -56,9 +64,7 @@ router.get('/:nom', async (req, res) => {
     } catch (error) {
       res.status(500).send({ message: error.message });
     }
-  });
-  
-
+});
 
 router.put('/:email', async (req, res) => {
     try {
@@ -68,15 +74,12 @@ router.put('/:email', async (req, res) => {
         return res.status(404).send({ message: "User not found" });
       }
   
-      
       const professionnel = await Professionnel.findOne({ userId: user._id }).populate('userId');
       if (!professionnel) {
         return res.status(404).send({ message: "Professionnel not found" });
       }
   
       const { nom, email, pwd } = req.body;
-  
-
   
       // Update user details
       if (nom) user.nom = nom;
@@ -94,18 +97,15 @@ router.put('/:email', async (req, res) => {
     } catch (error) {
       res.status(500).send({ message: error.message });
     }
-  });
-  
+});
 
 router.delete('/:id', async (req, res) => {
     try {
-      
       const professionnel = await Professionnel.findOne({ userId: req.params.id });
       if (!professionnel) {
         return res.status(404).send({ message: "Professionnel not found" });
       }
   
-      
       await Professionnel.findByIdAndDelete(professionnel._id);
       await User.findByIdAndDelete(req.params.id);
   
@@ -113,10 +113,6 @@ router.delete('/:id', async (req, res) => {
     } catch (error) {
       res.status(500).send({ message: error.message });
     }
-  });
-
-
-
-
+});
 
 module.exports = router;
