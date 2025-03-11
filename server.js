@@ -7,6 +7,7 @@ const RendezVousRoutes = require("./routes/rendezVous.route");
 const notificationRoutes = require("./routes/notifications.route");
 const profRoutes = require("./routes/professionel.route");
 const cronRoutes = require("./cron/cronJobs");
+const AdminRoutes = require("./routes/admin.route");
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use("/auth", AuthRoutes);
 app.use("/rendezVous", RendezVousRoutes);
 app.use("/notification", notificationRoutes);
 app.use("/prof", profRoutes);
+app.use("/admin", AdminRoutes)
 
 // Ajouter la route pour tester le cron job manuellement
 app.post("/test-cron", async (req, res) => {

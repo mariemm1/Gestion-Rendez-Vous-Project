@@ -1,124 +1,112 @@
 const express = require("express");
-const admin = express.Router('../models/admin');
-const user = require("../models/user");
-const bcryptjs = require('bcryptjs'); 
-const { Admin } = require("mongodb");
+const bcryptjs = require("bcryptjs"); 
 const router = express.Router();
 
+const Admin = require("../models/admin"); 
+const User = require("../models/user"); 
 
 // CREATE: Create a new admin 
-router.post('/create', async (req, res) => {
+router.post("/create", async (req, res) => {
   try {
     const { nom, email, pwd } = req.body;
 
-    // Create the user with default role "ADMIN"
-    const hashedPwd = await bcryptjs.hash(pwd, 10); // Hash the password
+    // Vérifier si l'email existe déjà
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).send({ message: "Cet email est déjà utilisé." });
+    }
+
+   
+    const hashedPwd = await bcryptjs.hash(pwd, 10);
+    
+    // Création du user
     const user = new User({ nom, email, pwd: hashedPwd, role: "ADMIN" });
+    await user.save();
 
-    await user.save(); 
+    // Création de l'admin
+    const newAdmin = new Admin({ userId: user._id, historiqueRendezVous: [] });
+    await newAdmin.save();
 
-    // Create the admin with the user reference
-    const newAdmin = new Admin({ userId: user._id, historiqueRendezVous: historiqueRendezVous || [] });
-
-    await newAdmin.save(); 
-
-    res.status(201).send({ message: "Admin saved successfully", admin: newAdmin });
+    res.status(201).send({ message: "Admin créé avec succès", admin: newAdmin });
   } catch (error) {
-    res.status(500).send({ message: error.message });
+    res.status(500).send({ message: "Erreur serveur", error: error.message });
   }
 });
 
 // READ: Get all Admins
-router.get('/all', async (req, res) => {
+router.get("/all", async (req, res) => {
   try {
-    const admins = await Admin.find().populate('userId');
+    const admins = await Admin.find().populate("userId");
     res.status(200).send(admins);
   } catch (error) {
-    res.status(500).send({ message: error.message });
+    res.status(500).send({ message: "Erreur serveur", error: error.message });
   }
 });
 
 // READ: Get a specific Admin by name
-// READ: Get a specific Admin by user name
-router.get('/:nom', async (req, res) => {
-    try {
-      // Find the user by name
-      const user = await User.findOne({ nom: req.params.nom });
-      if (!user) {
-        return res.status(404).send({ message: "User not found" });
-      }
-  
-      // Find the Admin using the user ID
-      const admin = await Admin.findOne({ userId: user._id }).populate('userId');
-      if (!admin) {
-        return res.status(404).send({ message: "Admin not found" });
-      }
-  
-      res.status(200).send(client);
-    } catch (error) {
-      res.status(500).send({ message: error.message });
+router.get("/:nom", async (req, res) => {
+  try {
+    const user = await User.findOne({ nom: req.params.nom });
+    if (!user) {
+      return res.status(404).send({ message: "Utilisateur non trouvé" });
     }
-  });
-  
 
-// UPDATE: Update a Admin by email
-router.put('/:email', async (req, res) => {
-    try {
-      // Find the user by email
-      const user = await User.findOne({ email: req.params.email });
-      if (!user) {
-        return res.status(404).send({ message: "User not found" });
-      }
-  
-      // Find the Admin associated with the user
-      const admin = await Admin.findOne({ userId: user._id }).populate('userId');
-      if (!admin) {
-        return res.status(404).send({ message: "Admin not found" });
-      }
-  
-      const { nom, email, pwd } = req.body;
-  
-
-  
-      // Update user details
-      if (nom) user.nom = nom;
-      if (email) user.email = email;
-  
-      // Hash password if updated
-      if (pwd) {
-        user.pwd = await bcryptjs.hash(pwd, 10);
-      }
-  
-      await user.save();
-      await admin.save();
-  
-      res.status(200).send({ message: "Admin updated successfully", admin });
-    } catch (error) {
-      res.status(500).send({ message: error.message });
+    const admin = await Admin.findOne({ userId: user._id }).populate("userId");
+    if (!admin) {
+      return res.status(404).send({ message: "Admin non trouvé" });
     }
-  });
-  
-// DELETE: Delete Admin by userId
-router.delete('/:id', async (req, res) => {
-    try {
-      // Find the Admin using userId instead of Admin _id
-      const admin = await Admin.findOne({ userId: req.params.id });
-      if (!admin) {
-        return res.status(404).send({ message: "Admin not found" });
-      }
-  
-      // Delete the Admin and associated user
-      await Admin.findByIdAndDelete(admin._id);
-      await User.findByIdAndDelete(req.params.id);
-  
-      res.status(200).send({ message: "Admin and associated user deleted successfully" });
-    } catch (error) {
-      res.status(500).send({ message: error.message });
+
+    res.status(200).send(admin);
+  } catch (error) {
+    res.status(500).send({ message: "Erreur serveur", error: error.message });
+  }
+});
+
+// UPDATE: Update an Admin by email
+router.put("/:email", async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.params.email });
+    if (!user) {
+      return res.status(404).send({ message: "Utilisateur non trouvé" });
     }
-  });
 
+    const admin = await Admin.findOne({ userId: user._id }).populate("userId");
+    if (!admin) {
+      return res.status(404).send({ message: "Admin non trouvé" });
+    }
 
+    const { nom, email, pwd } = req.body;
 
+    // Mise à jour des informations
+    if (nom) user.nom = nom;
+    if (email) user.email = email;
+    if (pwd) user.pwd = await bcryptjs.hash(pwd, 10);
 
+    await user.save();
+    await admin.save();
+
+    res.status(200).send({ message: "Admin mis à jour avec succès", admin });
+  } catch (error) {
+    res.status(500).send({ message: "Erreur serveur", error: error.message });
+  }
+});
+
+// DELETE: Delete an Admin by userId
+router.delete("/:id", async (req, res) => {
+  try {
+    const admin = await Admin.findOne({ userId: req.params.id });
+    if (!admin) {
+      return res.status(404).send({ message: "Admin non trouvé" });
+    }
+
+    // Suppression de l'Admin et de l'Utilisateur associé
+    await Admin.findByIdAndDelete(admin._id);
+    await User.findByIdAndDelete(req.params.id);
+
+    res.status(200).send({ message: "Admin et utilisateur associés supprimés avec succès" });
+  } catch (error) {
+    res.status(500).send({ message: "Erreur serveur", error: error.message });
+  }
+});
 
 module.exports = router;
