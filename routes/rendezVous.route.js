@@ -130,4 +130,39 @@ router.get("/client/:clientId", async (req, res) => {
   }
 });
 
+// Confirmer le rendez-vous par le professionnel
+router.put("/confirmer/:professionnelId/:rendezvousId", async (req, res) => {
+  try {
+    const { professionnelId, rendezvousId } = req.params;
+
+    // Trouver le rendez-vous
+    const rendezvous = await RendezVous.findById(rendezvousId);
+
+    if (!rendezvous) {
+      return res.status(404).send({ message: "Rendez-vous non trouvé" });
+    }
+
+    // Vérifier que le rendez-vous correspond au professionnel
+    if (!rendezvous.professionnel_id.equals(professionnelId)) {
+      return res.status(403).send({ message: "Ce rendez-vous n'appartient pas à ce professionnel" });
+    }
+
+    // Appeler la méthode pour confirmer le rendez-vous
+    await rendezvous.confirmerRendezVous();
+
+    // Envoi d'une notification au client
+    await new Notification({
+      type: "Rendez-vous",
+      role: "CLIENT",
+      message: `Votre rendez-vous du ${rendezvous.date} à ${rendezvous.heure} a été confirmé par le professionnel.`,
+      utilisateur_id: rendezvous.client_id
+    }).save();
+
+    res.status(200).send({ message: "Rendez-vous confirmé avec succès", rendezvous });
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+});
+
+
 module.exports = router;
