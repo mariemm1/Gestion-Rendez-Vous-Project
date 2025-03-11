@@ -4,6 +4,7 @@ const Admin = require('../models/admin');
 const Client = require('../models/client');
 const Professionnel = require('../models/professionnel');
 const bcryptjs = require('bcryptjs');
+const jwt = require ('jsonwebtoken');
 
 const router = express.Router();
 
@@ -57,5 +58,22 @@ router.post('/register', async (req, res) => {
   }
 });
 
+router.post('/login', async(req,res)=>{
+  try{
+      const {email,password}=req.body
+      const user = await User.findOne({email})
+      if(!user){
+          res.status(404).send({message:'user not found'})
+      }
+  const isHavePassword = user.comparePassword(password)
+  if(!isHavePassword){
+      res.status(400).send({message:'invalid credentiel'})
+  }
+  const token = await jwt.sign({userId:user._id},process.env.SECRET_KEY)
+  res.send({message:'user logged in successfully', token})
+  }catch (error){
+      res.status(400).send({message : error.message})
+  }
+})
 
 module.exports = router;
