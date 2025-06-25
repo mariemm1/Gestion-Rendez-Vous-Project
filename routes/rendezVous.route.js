@@ -1,29 +1,37 @@
 const express = require("express");
+const mongoose = require("mongoose");  // <-- Import mongoose ici
 const RendezVous = require("../models/rendezVous");
 const Client = require("../models/client");
 const Professionnel = require("../models/professionnel");
 const Notification = require("../models/notification");
 
+const verifyToken = require("../middleware/auth");
+const authorizeRoles = require("../middleware/role");
+
 const router = express.Router();
 
-// Ajouter une notification lors de la prise de rendez-vous
-router.post("/prendre/:clientId", async (req, res) => {
+// ✅ Ajouter une notification lors de la prise de rendez-vous (client only)
+router.post("/prendre/:clientId", verifyToken, authorizeRoles("CLIENT"), async (req, res) => {
   try {
-    const { date, heure, professionnel_id } = req.body;
+    const { date, heure, professionnel_id } = req.body;  // professionnel_id = userId du professionnel
     const { clientId } = req.params;
 
+    // Vérifier que l'utilisateur connecté est bien le client
     const client = await Client.findById(clientId);
-    const professionnel = await Professionnel.findById(professionnel_id);
-
-    if (!client || !professionnel) {
-      return res.status(404).send({ message: "Client ou professionnel non trouvé" });
+    if (!client) return res.status(404).send({ message: "Client non trouvé" });
+    if (req.user.userId !== client.userId.toString()) {
+      return res.status(403).send({ message: "Accès refusé." });
     }
+
+    // Chercher le professionnel par userId (pas _id)
+    const professionnel = await Professionnel.findOne({ userId: professionnel_id });
+    if (!professionnel) return res.status(404).send({ message: "Professionnel non trouvé" });
 
     const newRendezVous = new RendezVous({
       date,
       heure,
-      client_id: clientId,
-      professionnel_id: professionnel_id,
+      client_id: client._id,
+      professionnel_id: professionnel._id,
       statut: "En attente",
     });
 
@@ -35,132 +43,245 @@ router.post("/prendre/:clientId", async (req, res) => {
     await new Notification({
       type: "Rendez-vous",
       role: "PROFESSIONNEL",
-      message: `Un client (${client.nom}) a pris un rendez-vous le ${date} à ${heure}.`,
-      utilisateur_id: professionnel_id,
+      message: `Un client a pris un rendez-vous le ${date} à ${heure}.`,
+      utilisateur_id: professionnel._id,
     }).save();
 
     res.status(201).json({ message: "Rendez-vous pris avec succès.", rendezvous: newRendezVous });
   } catch (error) {
+    console.error(error);
     res.status(500).send({ message: error.message });
   }
 });
 
-// Annulation de rendez-vous
-router.put("/annuler/:clientId/:rendezvousId", async (req, res) => {
+//  Annulation de rendez-vous (client only)
+router.put("/annuler/:clientUserId/:rendezvousId", verifyToken, authorizeRoles("CLIENT"), async (req, res) => {
   try {
-    const { clientId, rendezvousId } = req.params;
-    const rendezvous = await RendezVous.findById(rendezvousId);
+    const { clientUserId, rendezvousId } = req.params;
 
-    if (!rendezvous || !rendezvous.client_id.equals(clientId)) {
-      return res.status(404).json({ message: "Rendez-vous non trouvé ou non autorisé" });
+    // Vérifier que c'est bien le user connecté
+    if (req.user.userId !== clientUserId) {
+      return res.status(403).json({ message: "Accès refusé" });
+    }
+
+    const rendezvous = await RendezVous.findById(rendezvousId);
+    if (!rendezvous) {
+      return res.status(404).json({ message: "Rendez-vous non trouvé" });
+    }
+
+    // Trouver client par userId
+    const client = await Client.findOne({ userId: clientUserId });
+    if (!client) {
+      return res.status(404).json({ message: "Client non trouvé" });
+    }
+
+    // Comparer le client_id stocké dans le rendezvous avec _id du client
+    if (!rendezvous.client_id.equals(client._id)) {
+      return res.status(403).json({ message: "Non autorisé" });
     }
 
     rendezvous.statut = "Annulé";
     await rendezvous.save();
 
-    await new Notification({
-      type: "Annulation",
-      role: "PROFESSIONNEL",
-      message: `Le client a annulé son rendez-vous prévu le ${rendezvous.date} à ${rendezvous.heure}.`,
-      utilisateur_id: rendezvous.professionnel_id,
-    }).save();
+    // Créer notification si besoin
 
     res.status(200).json({ message: "Rendez-vous annulé avec succès" });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: error.message });
   }
 });
 
 
-// DELETE: Client deletes an annulé rendezvous
-router.delete("/annuler/:clientId/:rendezvousId", async (req, res) => {
-  try {
-    const { clientId, rendezvousId } = req.params;
 
-    // Find the rendezvous
+
+
+//  DELETE rendezvous annulé (client only)
+router.delete("/annuler/:clientUserId/:rendezvousId", verifyToken, authorizeRoles("CLIENT"), async (req, res) => {
+  try {
+    const { clientUserId, rendezvousId } = req.params;
+
+    if (req.user.userId !== clientUserId) {
+      return res.status(403).send({ message: "Accès refusé" });
+    }
+
     const rendezvous = await RendezVous.findById(rendezvousId);
     if (!rendezvous) {
-      return res.status(404).send({ message: "Rendezvous not found" });
+      return res.status(404).send({ message: "Rendez-vous introuvable" });
     }
 
-    // Check if the rendezvous belongs to the client
-    if (!rendezvous.client_id.equals(clientId)) {
-      return res.status(403).send({ message: "You can only delete your own rendezvous" });
-    }
-
-    // Ensure the rendezvous is "annulé"
-    if (rendezvous.statut !== "Annulé") {
-      return res.status(400).send({ message: "Only annulé rendezvous can be deleted" });
-    }
-
-    // Find the client
-    const client = await Client.findById(clientId);
+    // Trouver client par userId
+    const client = await Client.findOne({ userId: clientUserId });
     if (!client) {
-      return res.status(404).send({ message: "Client not found" });
+      return res.status(404).send({ message: "Client non trouvé" });
     }
 
-    //  Remove rendezvous from client's history
-    client.historiqueRendezVous = client.historiqueRendezVous.filter(id => id.toString() !== rendezvousId);
+    // Comparer les ObjectId correctement avec 'new'
+    if (!rendezvous.client_id.equals(client._id)) {
+      return res.status(403).send({ message: "Non autorisé" });
+    }
+
+    if (rendezvous.statut !== "Annulé") {
+      return res.status(400).send({ message: "Seuls les rendez-vous annulés peuvent être supprimés" });
+    }
+
+    // Supprimer le rendez-vous de l'historique client
+    client.historiqueRendezVous = client.historiqueRendezVous.filter(
+      id => id.toString() !== rendezvousId
+    );
     await client.save();
 
-    //  Delete the rendezvous
     await RendezVous.findByIdAndDelete(rendezvousId);
 
-    res.status(200).send({ message: "Rendezvous deleted successfully" });
+    res.status(200).send({ message: "Rendez-vous supprimé avec succès" });
   } catch (error) {
+    console.error(error);
     res.status(500).send({ message: error.message });
   }
 });
 
 
-
-// READ: Get all rendezvous for a specific client
-router.get("/client/:clientId", async (req, res) => {
+//  READ all rendezvous of the connected client
+router.get("/client/:clientUserId", verifyToken, authorizeRoles("CLIENT"), async (req, res) => {
   try {
-    const { clientId } = req.params;
-    const rendezvousList = await RendezVous.find({ client_id: clientId }).populate("professionnel_id");
-    
-    if (!rendezvousList) {
-      return res.status(404).send({ message: "No rendezvous found for this client" });
+    const { clientUserId } = req.params;
+
+    // Vérifier que l'utilisateur connecté est bien le client concerné
+    if (req.user.userId !== clientUserId) {
+      return res.status(403).json({ message: "Accès refusé" });
     }
 
-    res.status(200).send(rendezvousList);
+    // Trouver le document Client à partir du userId
+    const client = await Client.findOne({ userId: clientUserId });
+    if (!client) {
+      return res.status(404).json({ message: "Client non trouvé" });
+    }
+
+    // Récupérer les rendez-vous liés à ce client (_id de Client)
+    const rendezvousList = await RendezVous.find({ client_id: client._id }).populate("professionnel_id");
+
+    res.status(200).json(rendezvousList);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// Get all RDVs of a professional
+router.get("/professionnel/:userId", verifyToken, authorizeRoles("PROFESSIONNEL"), async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Get the professionnel record by userId
+    const professionnel = await Professionnel.findOne({ userId });
+    if (!professionnel) return res.status(404).send({ message: "Professionnel non trouvé" });
+
+    const rdvs = await RendezVous.find({ professionnel_id: professionnel._id }).populate("client_id");
+
+    res.status(200).send(rdvs);
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
 });
 
-// Confirmer le rendez-vous par le professionnel
-router.put("/confirmer/:professionnelId/:rendezvousId", async (req, res) => {
+// Get all RDVs en-attente of a professional
+router.get("/professionnel/:userId/en-attente", verifyToken, authorizeRoles("PROFESSIONNEL"), async (req, res) => {
   try {
-    const { professionnelId, rendezvousId } = req.params;
+    const { userId } = req.params;
 
-    // Trouver le rendez-vous
+    if (req.user.userId !== userId) {
+      return res.status(403).json({ message: "Accès refusé" });
+    }
+
+    const professionnel = await Professionnel.findOne({ userId });
+    if (!professionnel) {
+      return res.status(404).json({ message: "Professionnel non trouvé" });
+    }
+
+    const rdvsEnAttente = await RendezVous.find({
+      professionnel_id: professionnel._id,
+      statut: "En attente"
+    }).populate("client_id");
+
+    res.status(200).json(rdvsEnAttente);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get all RDVs confirme of a professional
+router.get("/professionnel/:userId/confirme", verifyToken, authorizeRoles("PROFESSIONNEL"), async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (req.user.userId !== userId) {
+      return res.status(403).json({ message: "Accès refusé" });
+    }
+
+    const professionnel = await Professionnel.findOne({ userId });
+    if (!professionnel) {
+      return res.status(404).json({ message: "Professionnel non trouvé" });
+    }
+
+    const rdvsConfirmes = await RendezVous.find({
+      professionnel_id: professionnel._id,
+      statut: "Confirmé"
+    }).populate("client_id");
+
+    res.status(200).json(rdvsConfirmes);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+
+//  Confirmation by professional only
+router.put("/confirmer/:userId/:rendezvousId", verifyToken, authorizeRoles("PROFESSIONNEL"), async (req, res) => {
+  try {
+    const { userId, rendezvousId } = req.params;
+
+    // Verify that the authenticated user is the one sending the request
+    if (req.user.userId !== userId) {
+      return res.status(403).json({ message: "Accès refusé" });
+    }
+
+    // Find the professional by userId
+    const professionnel = await Professionnel.findOne({ userId });
+    if (!professionnel) {
+      return res.status(404).json({ message: "Professionnel non trouvé" });
+    }
+
+    // Find the rendez-vous
     const rendezvous = await RendezVous.findById(rendezvousId);
-
     if (!rendezvous) {
-      return res.status(404).send({ message: "Rendez-vous non trouvé" });
+      return res.status(404).json({ message: "Rendez-vous non trouvé" });
     }
 
-    // Vérifier que le rendez-vous correspond au professionnel
-    if (!rendezvous.professionnel_id.equals(professionnelId)) {
-      return res.status(403).send({ message: "Ce rendez-vous n'appartient pas à ce professionnel" });
+    // Make sure the rendez-vous belongs to the authenticated professional
+    if (!rendezvous.professionnel_id.equals(professionnel._id)) {
+      return res.status(403).json({ message: "Ce rendez-vous ne vous appartient pas" });
     }
 
-    // Appeler la méthode pour confirmer le rendez-vous
-    await rendezvous.confirmerRendezVous();
+    // Update the status
+    rendezvous.statut = "Confirmé";
+    await rendezvous.save();
 
-    // Envoi d'une notification au client
+    // Notify the client
     await new Notification({
-      type: "Rendez-vous",
+      type: "Confirmation",
       role: "CLIENT",
-      message: `Votre rendez-vous du ${rendezvous.date} à ${rendezvous.heure} a été confirmé par le professionnel.`,
+      message: `Votre rendez-vous du ${rendezvous.date} à ${rendezvous.heure} a été confirmé.`,
       utilisateur_id: rendezvous.client_id
     }).save();
 
-    res.status(200).send({ message: "Rendez-vous confirmé avec succès", rendezvous });
+    res.status(200).json({ message: "Rendez-vous confirmé avec succès", rendezvous });
   } catch (error) {
-    res.status(500).send({ message: error.message });
+    console.error(error);
+    res.status(500).json({ message: error.message });
   }
 });
 
