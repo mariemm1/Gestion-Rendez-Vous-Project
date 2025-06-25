@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ["ADMIN", "PROFESSIONNEL", "CLIENT"], required: true },
 }, { timestamps: true });
 
-// Hash password before saving
+// Hash password before saving if modified
 userSchema.pre("save", async function (next) {
   if (this.isModified("pwd")) {
     this.pwd = await bcryptjs.hash(this.pwd, 10);
@@ -16,9 +16,9 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-// Compare password method
-userSchema.methods.comparePassword = async function (userPassword) {
-  return bcryptjs.compare(userPassword, this.pwd);
+// Compare plain password with hashed password
+userSchema.methods.comparePassword = async function (plainPassword) {
+  return bcryptjs.compare(plainPassword, this.pwd);
 };
 
 module.exports = mongoose.model("Utilisateur", userSchema);

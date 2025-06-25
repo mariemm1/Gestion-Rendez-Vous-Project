@@ -1,79 +1,77 @@
-const express = require('express');
-const User = require('../models/user');
-const Admin = require('../models/admin');
-const Client = require('../models/client');
-const Professionnel = require('../models/professionnel');
-const bcryptjs = require('bcryptjs');
-const jwt = require ('jsonwebtoken');
-
+const express = require("express");
+const jwt = require("jsonwebtoken");
 const router = express.Router();
 
-router.post('/register', async (req, res) => {
+const User = require("../models/user");
+const Admin = require("../models/admin");
+const Client = require("../models/client");
+const Professionnel = require("../models/professionnel");
+
+// Register new user
+router.post("/register", async (req, res) => {
   try {
-    const { nom, email, pwd, role = 'CLIENT', specialite } = req.body; // Include specialite
+    const { nom, email, pwd, role = "CLIENT", specialite } = req.body;
 
-    // Basic validation
-    if (!nom || !email || !pwd) {
-      return res.status(400).send({ message: "All fields (nom, email, pwd) are required." });
-    }
+    // Validate required fields
+    if (!nom || !email || !pwd)
+      return res.status(400).send({ message: "All fields are required." });
 
-    // Ensure role is valid
-    if (!['ADMIN', 'PROFESSIONNEL', 'CLIENT'].includes(role)) {
-      return res.status(400).send({ message: "Invalid role. Choose from 'ADMIN', 'PROFESSIONNEL', or 'CLIENT'." });
-    }
+    // Validate role
+    if (!["ADMIN", "CLIENT", "PROFESSIONNEL"].includes(role))
+      return res.status(400).send({ message: "Invalid role." });
 
-    // Check if the email already exists
+    // Check if email exists
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).send({ message: "Email already in use. Please choose another one." });
-    }
+    if (existingUser)
+      return res.status(400).send({ message: "Email already exists." });
 
-    // Hash the password before saving
-    const hashedPwd = await bcryptjs.hash(pwd, 10);
-
-    // Create a new user
-    const user = new User({ nom, email, pwd: hashedPwd, role });
+    // Create user (password hashing handled by model pre-save hook)
+    const user = new User({ nom, email, pwd, role });
     await user.save();
 
-    // Create the corresponding model based on the role
-    if (role === 'CLIENT') {
-      const client = new Client({ userId: user._id });
-      await client.save();
-    } else if (role === 'ADMIN') {
-      const admin = new Admin({ userId: user._id });
-      await admin.save();
-    } else if (role === 'PROFESSIONNEL') {
-      // Check if specialite is required and pass it
-      if (!specialite) {
-        return res.status(400).send({ message: "Specialite is required for PROFESSIONNEL." });
-      }
-
-      const professionnel = new Professionnel({ userId: user._id, specialite });
-      await professionnel.save();
+    // Create role-specific document
+    if (role === "CLIENT") {
+      await new Client({ userId: user._id }).save();
+    } else if (role === "ADMIN") {
+      await new Admin({ userId: user._id }).save();
+    } else if (role === "PROFESSIONNEL") {
+      if (!specialite)
+        return res.status(400).send({ message: "Specialité required for professionnel." });
+      await new Professionnel({ userId: user._id, specialite }).save();
     }
 
     res.status(201).send({ message: "User registered successfully", user });
-  } catch (error) {
-    res.status(500).send({ message: error.message });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
   }
 });
 
-router.post('/login', async(req,res)=>{
-  try{
-      const {email,password}=req.body
-      const user = await User.findOne({email})
-      if(!user){
-          res.status(404).send({message:'user not found'})
-      }
-  const isHavePassword = user.comparePassword(password)
-  if(!isHavePassword){
-      res.status(400).send({message:'invalid credentiel'})
+// Login user
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find user by email
+    const user = await User.findOne({ email });
+    if (!user)
+      return res.status(404).send({ message: "User not found" });
+
+    // Compare password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch)
+      return res.status(400).send({ message: "Invalid credentials" });
+
+    // Create JWT token
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.SECRET_KEY,
+      { expiresIn: "1d" }
+    );
+
+    res.status(200).send({ message: "Login successful", token });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
   }
-  const token = await jwt.sign({userId:user._id},process.env.SECRET_KEY)
-  res.send({message:'user logged in successfully', token})
-  }catch (error){
-      res.status(400).send({message : error.message})
-  }
-})
+});
 
 module.exports = router;

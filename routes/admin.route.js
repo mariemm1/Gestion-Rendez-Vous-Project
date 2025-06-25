@@ -1,12 +1,16 @@
 const express = require("express");
-const bcryptjs = require("bcryptjs"); 
+const bcryptjs = require("bcryptjs");
 const router = express.Router();
 
-const Admin = require("../models/admin"); 
-const User = require("../models/user"); 
+const Admin = require("../models/admin");
+const User = require("../models/user");
 
-// CREATE: Create a new admin 
-router.post("/create", async (req, res) => {
+const verifyToken = require("../middleware/auth");
+const authorizeRoles = require("../middleware/role");
+
+// CREATE: Create a new admin
+// Only users with ADMIN role can create new admins
+router.post("/create", verifyToken, authorizeRoles("ADMIN"), async (req, res) => {
   try {
     const { nom, email, pwd } = req.body;
 
@@ -16,9 +20,8 @@ router.post("/create", async (req, res) => {
       return res.status(400).send({ message: "Cet email est déjà utilisé." });
     }
 
-   
     const hashedPwd = await bcryptjs.hash(pwd, 10);
-    
+
     // Création du user
     const user = new User({ nom, email, pwd: hashedPwd, role: "ADMIN" });
     await user.save();
@@ -34,7 +37,8 @@ router.post("/create", async (req, res) => {
 });
 
 // READ: Get all Admins
-router.get("/all", async (req, res) => {
+// Only ADMIN users can list all admins
+router.get("/all", verifyToken, authorizeRoles("ADMIN"), async (req, res) => {
   try {
     const admins = await Admin.find().populate("userId");
     res.status(200).send(admins);
@@ -44,7 +48,8 @@ router.get("/all", async (req, res) => {
 });
 
 // READ: Get a specific Admin by name
-router.get("/:nom", async (req, res) => {
+// ADMIN users can access any, others forbidden
+router.get("/:nom", verifyToken, authorizeRoles("ADMIN"), async (req, res) => {
   try {
     const user = await User.findOne({ nom: req.params.nom });
     if (!user) {
@@ -63,7 +68,8 @@ router.get("/:nom", async (req, res) => {
 });
 
 // UPDATE: Update an Admin by email
-router.put("/:email", async (req, res) => {
+// Only ADMIN can update admins
+router.put("/:email", verifyToken, authorizeRoles("ADMIN"), async (req, res) => {
   try {
     const user = await User.findOne({ email: req.params.email });
     if (!user) {
@@ -92,7 +98,8 @@ router.put("/:email", async (req, res) => {
 });
 
 // DELETE: Delete an Admin by userId
-router.delete("/:id", async (req, res) => {
+// Only ADMIN can delete admins
+router.delete("/:id", verifyToken, authorizeRoles("ADMIN"), async (req, res) => {
   try {
     const admin = await Admin.findOne({ userId: req.params.id });
     if (!admin) {
