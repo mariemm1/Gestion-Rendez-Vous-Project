@@ -1,0 +1,12 @@
+<ion-content class="ion-padding">
+  <h2>Welcome 👋</h2>
+  <ion-list *ngIf="auth.currentUser$ | async as user">
+    <ion-item>
+      <ion-label>
+        <h3>{{ user.nom }}</h3>
+        <p>{{ user.email }}</p>
+        <p>Role: {{ user.role }}</p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+</ion-content>
