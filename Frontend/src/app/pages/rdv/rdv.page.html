@@ -1,0 +1,33 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>My Appointments</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="load($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <ion-list *ngIf="!loading; else loadingTpl">
+    <ion-item *ngFor="let r of items">
+      <ion-label>
+        <h2>{{ r.date | date:'medium' }}</h2>
+        <p>Status: {{ r.statut }}</p>
+        <p>Pro: {{ r.professionnel }}</p>
+        <p *ngIf="r.motif">Reason: {{ r.motif }}</p>
+      </ion-label>
+      <ion-buttons slot="end">
+        <ion-button (click)="confirm(r)" [disabled]="r.statut==='CONFIRMED'">Confirm</ion-button>
+        <ion-button color="warning" (click)="cancel(r)" [disabled]="r.statut==='CANCELLED'">Cancel</ion-button>
+        <ion-button color="danger" (click)="remove(r)">Delete</ion-button>
+      </ion-buttons>
+    </ion-item>
+  </ion-list>
+
+  <ng-template #loadingTpl>
+    <div class="ion-text-center ion-padding">
+      <ion-spinner></ion-spinner>
+    </div>
+  </ng-template>
+</ion-content>

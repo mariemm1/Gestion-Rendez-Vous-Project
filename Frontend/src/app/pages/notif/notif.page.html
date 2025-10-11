@@ -1,0 +1,27 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Notifications</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-list *ngIf="!loading; else loadingTpl">
+    <ion-item *ngFor="let n of items">
+      <ion-label>
+        <h2 [style.font-weight]="n.isRead ? 'normal' : 'bold'">{{ n.type }}</h2>
+        <p>{{ n.message }}</p>
+        <p>{{ n.createdAt | date:'short' }}</p>
+      </ion-label>
+      <ion-buttons slot="end">
+        <ion-button (click)="markRead(n)" [disabled]="n.isRead">Mark read</ion-button>
+        <ion-button color="danger" (click)="remove(n)">Delete</ion-button>
+      </ion-buttons>
+    </ion-item>
+  </ion-list>
+
+  <ng-template #loadingTpl>
+    <div class="ion-text-center ion-padding">
+      <ion-spinner></ion-spinner>
+    </div>
+  </ng-template>
+</ion-content>
