@@ -1,0 +1,35 @@
+<!-- A big welcome card -->
+<ion-card>
+  <ion-card-header>
+    <ion-card-title>Bienvenue 👋 {{ name }}</ion-card-title>
+  </ion-card-header>
+  <ion-card-content>
+    Rôle: CLIENT — ID: {{ uid }}
+  </ion-card-content>
+</ion-card>
+
+<!-- RDV preview -->
+<ion-card>
+  <ion-card-header><ion-card-title>Mes prochains rendez-vous</ion-card-title></ion-card-header>
+  <ion-card-content>
+    <ng-container *ngIf="rdv?.length; else emptyRdv">
+      <div *ngFor="let r of rdv" class="line">
+        • {{ r.date | date:'mediumDate' }} à {{ r.heure }} — <b>{{ r.statut }}</b>
+      </div>
+    </ng-container>
+    <ng-template #emptyRdv>Aucun rendez-vous pour le moment.</ng-template>
+  </ion-card-content>
+</ion-card>
+
+<!-- Notifications preview -->
+<ion-card>
+  <ion-card-header><ion-card-title>Dernières notifications</ion-card-title></ion-card-header>
+  <ion-card-content>
+    <ng-container *ngIf="notif?.length; else emptyNotif">
+      <div *ngFor="let n of notif" class="line">
+        • [{{ n.type }}] {{ n.message }} ({{ n.dateEnvoi | date:'short' }})
+      </div>
+    </ng-container>
+    <ng-template #emptyNotif>Aucune notification.</ng-template>
+  </ion-card-content>
+</ion-card>

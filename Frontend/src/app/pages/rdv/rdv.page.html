@@ -1,33 +1,90 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>My Appointments</ion-title>
+    <ion-title>Rendez-vous</ion-title>
+
+    <!-- Segment visible seulement pour les PRO -->
+    <ion-segment slot="end" *ngIf="role === 'PROFESSIONNEL'" [(ngModel)]="segment">
+      <ion-segment-button value="pending"><ion-label>En attente</ion-label></ion-segment-button>
+      <ion-segment-button value="confirmed"><ion-label>Confirmés</ion-label></ion-segment-button>
+      <ion-segment-button value="all"><ion-label>Tous</ion-label></ion-segment-button>
+    </ion-segment>
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
-  <ion-refresher slot="fixed" (ionRefresh)="load($event)">
-    <ion-refresher-content></ion-refresher-content>
-  </ion-refresher>
+<ion-content class="ion-padding">
+  <ion-note color="danger" *ngIf="errorMsg">{{ errorMsg }}</ion-note>
 
-  <ion-list *ngIf="!loading; else loadingTpl">
-    <ion-item *ngFor="let r of items">
-      <ion-label>
-        <h2>{{ r.date | date:'medium' }}</h2>
-        <p>Status: {{ r.statut }}</p>
-        <p>Pro: {{ r.professionnel }}</p>
-        <p *ngIf="r.motif">Reason: {{ r.motif }}</p>
-      </ion-label>
-      <ion-buttons slot="end">
-        <ion-button (click)="confirm(r)" [disabled]="r.statut==='CONFIRMED'">Confirm</ion-button>
-        <ion-button color="warning" (click)="cancel(r)" [disabled]="r.statut==='CANCELLED'">Cancel</ion-button>
-        <ion-button color="danger" (click)="remove(r)">Delete</ion-button>
-      </ion-buttons>
-    </ion-item>
-  </ion-list>
+  <!-- CLIENT VIEW -->
+  <ng-container *ngIf="role === 'CLIENT'">
+    <ion-note *ngIf="!clientList.length">Aucun rendez-vous.</ion-note>
 
-  <ng-template #loadingTpl>
-    <div class="ion-text-center ion-padding">
-      <ion-spinner></ion-spinner>
-    </div>
-  </ng-template>
+    <ion-list *ngIf="clientList.length">
+      <ion-item *ngFor="let r of clientList">
+        <ion-icon slot="start" name="calendar"></ion-icon>
+        <ion-label>
+          <div>
+            {{ asDate(r.date) | date:'mediumDate' }} à {{ r.heure }}
+            — <strong>{{ r.statut }}</strong>
+          </div>
+        </ion-label>
+
+        <ion-buttons slot="end">
+          <ion-button color="warning" size="small" (click)="cancel(r)" *ngIf="isPending(r)">
+            Annuler
+          </ion-button>
+          <ion-button color="danger" size="small" (click)="deleteCancelled(r)" *ngIf="isCancelled(r)">
+            Supprimer
+          </ion-button>
+        </ion-buttons>
+      </ion-item>
+    </ion-list>
+  </ng-container>
+
+  <!-- PRO VIEW -->
+  <ng-container *ngIf="role === 'PROFESSIONNEL'">
+    <ion-list *ngIf="segment() === 'pending'">
+      <ion-item *ngFor="let r of proPending">
+        <ion-icon slot="start" name="time"></ion-icon>
+        <ion-label>
+          {{ asDate(r.date) | date:'mediumDate' }} à {{ r.heure }}
+          — <strong>{{ r.statut }}</strong>
+        </ion-label>
+        <ion-buttons slot="end">
+          <ion-button color="success" size="small" (click)="confirm(r)" *ngIf="isPending(r)">
+            Confirmer
+          </ion-button>
+        </ion-buttons>
+      </ion-item>
+      <ion-note *ngIf="!proPending.length">Aucun RDV en attente.</ion-note>
+    </ion-list>
+
+    <ion-list *ngIf="segment() === 'confirmed'">
+      <ion-item *ngFor="let r of proConfirmed">
+        <ion-icon slot="start" name="checkmark-circle"></ion-icon>
+        <ion-label>
+          {{ asDate(r.date) | date:'mediumDate' }} à {{ r.heure }}
+          — <strong>{{ r.statut }}</strong>
+        </ion-label>
+      </ion-item>
+      <ion-note *ngIf="!proConfirmed.length">Aucun RDV confirmé.</ion-note>
+    </ion-list>
+
+    <ion-list *ngIf="segment() === 'all'">
+      <ion-item *ngFor="let r of proAll">
+        <ion-icon slot="start" name="calendar"></ion-icon>
+        <ion-label>
+          {{ asDate(r.date) | date:'mediumDate' }} à {{ r.heure }}
+          — <strong>{{ r.statut }}</strong>
+        </ion-label>
+        <ion-buttons slot="end">
+          <ion-button color="success" size="small" (click)="confirm(r)" *ngIf="isPending(r)">
+            Confirmer
+          </ion-button>
+        </ion-buttons>
+      </ion-item>
+      <ion-note *ngIf="!proAll.length">Aucun RDV.</ion-note>
+    </ion-list>
+  </ng-container>
+
+  <!-- ADMIN could reuse PRO/CLIENT lists later if needed -->
 </ion-content>

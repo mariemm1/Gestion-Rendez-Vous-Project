@@ -1,27 +1,41 @@
 <ion-header>
   <ion-toolbar>
     <ion-title>Notifications</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="load()">
+        <ion-icon name="notifications-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
-  <ion-list *ngIf="!loading; else loadingTpl">
+  <ion-refresher slot="fixed" (ionRefresh)="load($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <ion-note color="danger" *ngIf="errorMsg">{{ errorMsg }}</ion-note>
+  <ion-note *ngIf="!loading && !items.length">Aucune notification.</ion-note>
+
+  <ion-list *ngIf="items.length">
     <ion-item *ngFor="let n of items">
       <ion-label>
-        <h2 [style.font-weight]="n.isRead ? 'normal' : 'bold'">{{ n.type }}</h2>
-        <p>{{ n.message }}</p>
-        <p>{{ n.createdAt | date:'short' }}</p>
+        <div class="ion-text-wrap">{{ n.message }}</div>
+        <small>{{ asDate(n.dateEnvoi) | date:'short' }} • {{ n.type }}</small>
       </ion-label>
+
+      <ion-chip [color]="n.lue ? 'medium' : 'primary'" slot="end">
+        {{ n.lue ? 'Lue' : 'Non lue' }}
+      </ion-chip>
+
       <ion-buttons slot="end">
-        <ion-button (click)="markRead(n)" [disabled]="n.isRead">Mark read</ion-button>
-        <ion-button color="danger" (click)="remove(n)">Delete</ion-button>
+        <ion-button size="small" (click)="markRead(n)" [disabled]="n.lue">
+          <ion-icon name="checkmark-done"></ion-icon>
+        </ion-button>
+        <ion-button color="danger" size="small" (click)="remove(n)">
+          <ion-icon name="trash"></ion-icon>
+        </ion-button>
       </ion-buttons>
     </ion-item>
   </ion-list>
-
-  <ng-template #loadingTpl>
-    <div class="ion-text-center ion-padding">
-      <ion-spinner></ion-spinner>
-    </div>
-  </ng-template>
 </ion-content>

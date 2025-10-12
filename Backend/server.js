@@ -12,8 +12,12 @@ const cors = require('cors');
 
 const app = express();
 
+app.use(cors({ origin: ['http://localhost:8100'], credentials: true }));
+
+
 // Middleware pour traiter les requêtes JSON
 app.use(express.json());
+
 
 // Routes
 app.use("/client", clientRoutes);
@@ -22,7 +26,6 @@ app.use("/rendezVous", RendezVousRoutes);
 app.use("/notification", notificationRoutes);
 app.use("/prof", profRoutes);
 app.use("/admin", AdminRoutes)
-app.use(cors({ origin: ['http://localhost:8100'], credentials: true }));
 
 
 // Ajouter la route pour tester le cron job manuellement

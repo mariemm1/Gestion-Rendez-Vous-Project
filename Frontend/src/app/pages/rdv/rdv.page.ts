@@ -1,41 +1,107 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import {
-  IonContent, IonHeader, IonToolbar, IonTitle, IonRefresher, IonRefresherContent,
-  IonList, IonItem, IonLabel, IonButtons, IonButton, IonSpinner
+  IonContent, IonHeader, IonToolbar, IonTitle, IonSegment, IonSegmentButton,
+  IonLabel, IonList, IonItem, IonButtons, IonButton, IonIcon, IonNote
 } from '@ionic/angular/standalone';
-import { CommonModule, DatePipe, NgForOf, NgIf } from '@angular/common';
+import { addIcons } from 'ionicons';
+import { calendar, checkmarkCircle, closeCircle, time } from 'ionicons/icons';
+
+import { AuthService } from '../../services/auth/auth';
 import { RdvService } from '../../services/rdv/rdv';
 import { RendezVous } from '../../models/rendezvous/rendezvous';
+import { FormsModule } from '@angular/forms';
+
 
 @Component({
   selector: 'app-rdv',
   templateUrl: './rdv.page.html',
   styleUrls: ['./rdv.page.scss'],
   standalone: true,
-imports: [
-    CommonModule, DatePipe, NgForOf, NgIf,
-    IonContent, IonHeader, IonToolbar, IonTitle, IonRefresher, IonRefresherContent,
-    IonList, IonItem, IonLabel, IonButtons, IonButton, IonSpinner
+  imports: [
+    CommonModule,FormsModule,
+    IonContent, IonHeader, IonToolbar, IonTitle,
+    IonSegment, IonSegmentButton, IonLabel,
+    IonList, IonItem, IonButtons, IonButton, IonIcon, IonNote
   ],
+
 })
 
 export class RdvPage implements OnInit {
-  items: RendezVous[] = [];
-  loading = false;
+  role = this.auth.role;                   // 'CLIENT' | 'PROFESSIONNEL' | 'ADMIN'
+  uid = this.auth.userId!;
+  segment = signal<'pending'|'confirmed'|'all'>('pending');
 
-  constructor(private rdv: RdvService) {}
+  clientList: RendezVous[] = [];
+  proAll: RendezVous[] = [];
+  proPending: RendezVous[] = [];
+  proConfirmed: RendezVous[] = [];
+  errorMsg = '';
 
-  ngOnInit() { this.load(); }
+  constructor(private auth: AuthService, private rdv: RdvService) {
+    addIcons({ calendar, checkmarkCircle, closeCircle, time });
+  }
 
-  load(ev?: CustomEvent) {
-    this.loading = true;
-    this.rdv.list({ mine: true }).subscribe({
-      next: data => { this.items = data; this.loading = false; (ev as any)?.detail?.complete?.(); },
-      error: () => { this.loading = false; (ev as any)?.detail?.complete?.(); }
+  ngOnInit() {
+    if (this.role === 'CLIENT') {
+      this.loadClient();
+    } else if (this.role === 'PROFESSIONNEL') {
+      this.loadPro();
+    }
+  }
+
+  // ---------------- CLIENT ----------------
+  loadClient() {
+    this.errorMsg = '';
+    this.rdv.getClientRdvs(this.uid).subscribe({
+      next: list => { this.clientList = list; },
+      error: err => this.errorMsg = err?.error?.message || 'Erreur chargement RDV',
     });
   }
 
-  confirm(r: RendezVous) { this.rdv.confirm(r._id!).subscribe(() => this.load()); }
-  cancel(r: RendezVous)  { this.rdv.cancel(r._id!).subscribe(() => this.load()); }
-  remove(r: RendezVous)  { this.rdv.remove(r._id!).subscribe(() => this.load()); }
+  cancel(r: RendezVous) {
+    // Only client can cancel his own RDV
+    this.rdv.cancel(this.uid, r._id!).subscribe({
+      next: () => this.loadClient(),
+      error: err => this.errorMsg = err?.error?.message || 'Impossible d’annuler',
+    });
+  }
+
+  deleteCancelled(r: RendezVous) {
+    // Backend allows DELETE only if statut === "Annulé"
+    this.rdv.deleteCancelled(this.uid, r._id!).subscribe({
+      next: () => this.loadClient(),
+      error: err => this.errorMsg = err?.error?.message || 'Suppression impossible',
+    });
+  }
+
+  // ---------------- PRO ----------------
+  loadPro() {
+    this.errorMsg = '';
+    this.rdv.getProRdvs(this.uid).subscribe({
+      next: list => this.proAll = list,
+      error: err => this.errorMsg = err?.error?.message || 'Erreur chargement RDV',
+    });
+    this.rdv.getProPending(this.uid).subscribe({
+      next: list => this.proPending = list,
+      error: () => {},
+    });
+    this.rdv.getProConfirmed(this.uid).subscribe({
+      next: list => this.proConfirmed = list,
+      error: () => {},
+    });
+  }
+
+  confirm(r: RendezVous) {
+    this.rdv.confirmByPro(this.uid, r._id!).subscribe({
+      next: () => this.loadPro(),
+      error: err => this.errorMsg = err?.error?.message || 'Confirmation impossible',
+    });
+  }
+
+  // helpers
+  asDate(d: string) { return new Date(d); }
+  isPending(r: RendezVous) { return r.statut === 'En attente'; }
+  isConfirmed(r: RendezVous) { return r.statut === 'Confirmé'; }
+  isCancelled(r: RendezVous) { return r.statut === 'Annulé'; }
 }

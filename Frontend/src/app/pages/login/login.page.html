@@ -1,13 +1,53 @@
-<ion-header><ion-toolbar><ion-title>Login</ion-title></ion-toolbar></ion-header>
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Connexion</ion-title>
+  </ion-toolbar>
+</ion-header>
+
 <ion-content class="ion-padding">
-  <form [formGroup]="form" (ngSubmit)="onSubmit()">
-    <ion-item>
-      <ion-input type="email" label="Email" labelPlacement="stacked" formControlName="email"></ion-input>
-    </ion-item>
-    <ion-item>
-      <ion-input type="password" label="Password" labelPlacement="stacked" formControlName="pwd"></ion-input>
-    </ion-item>
-    <ion-button expand="block" type="submit" [disabled]="loading">Sign in</ion-button>
-    <ion-button fill="clear" routerLink="/register">Create account</ion-button>
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <ion-list>
+      <ion-item>
+        <ion-icon slot="start" name="mail"></ion-icon>
+        <ion-input
+          formControlName="email"
+          type="email"
+          label="Email"
+          labelPlacement="stacked"
+          placeholder="you@example.com">
+        </ion-input>
+      </ion-item>
+      <ion-note color="danger" *ngIf="email?.touched && email?.invalid">
+        Entrez un email valide.
+      </ion-note>
+
+      <ion-item>
+        <ion-icon slot="start" name="lock-closed"></ion-icon>
+        <ion-input
+          formControlName="password"
+          [type]="showPwd ? 'text' : 'password'"
+          label="Mot de passe"
+          labelPlacement="stacked"
+          placeholder="••••••••">
+        </ion-input>
+        <ion-button fill="clear" size="small" (click)="showPwd = !showPwd" type="button">
+          <ion-icon [name]="showPwd ? 'eye-off' : 'eye'"></ion-icon>
+        </ion-button>
+      </ion-item>
+      <ion-note color="danger" *ngIf="password?.touched && password?.invalid">
+        Mot de passe (min 6 caractères).
+      </ion-note>
+    </ion-list>
+
+    <ion-note color="danger" *ngIf="errorMsg" class="ion-margin-top">{{ errorMsg }}</ion-note>
+
+    <ion-button expand="block" type="submit" class="ion-margin-top">
+      <ion-icon slot="start" name="log-in"></ion-icon>
+      Se connecter
+    </ion-button>
+
+    <ion-button expand="block" fill="clear" routerLink="/register">
+      Créer un compte
+    </ion-button>
   </form>
 </ion-content>
