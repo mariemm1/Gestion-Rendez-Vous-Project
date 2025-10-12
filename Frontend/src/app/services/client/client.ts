@@ -20,6 +20,11 @@ export class ClientService {
 
   constructor(private http: HttpClient) {}
 
+  // used to retrieve the Client._id of the logged-in user
+  me() {
+    return this.http.get<{ _id: string }>(`${this.base}/me`);
+  }
+
   // Public create (creates a Utilisateur with role CLIENT + Client doc)
   create(data: { nom: string; email: string; pwd: string; historiqueRendezVous?: string[] }) {
     return this.http.post<{ message: string; client: Client }>(`${this.base}/create`, data);

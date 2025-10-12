@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  IonCard, IonCardHeader, IonCardTitle, IonCardContent
+  IonCard, IonCardHeader, IonCardTitle, IonCardContent,IonButton
 } from '@ionic/angular/standalone';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth/auth';
 import { RdvService } from '../../services/rdv/rdv';
 import { NotificationsService } from '../../services/notifications/notifications';
@@ -12,7 +13,7 @@ import { NotificationsService } from '../../services/notifications/notifications
   templateUrl: './dashboard-client.page.html',
   styleUrls: ['./dashboard-client.page.scss'],
   standalone: true,
-  imports: [CommonModule, IonCard, IonCardHeader, IonCardTitle, IonCardContent],
+  imports: [CommonModule, IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonButton, RouterLink],
 })
 export class DashboardClientPage implements OnInit {
   uid = this.auth.userId;

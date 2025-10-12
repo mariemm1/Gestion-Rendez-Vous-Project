@@ -33,3 +33,17 @@
     <ng-template #emptyNotif>Aucune notification.</ng-template>
   </ion-card-content>
 </ion-card>
+
+<!-- Quick actions -->
+<ion-card>
+  <ion-card-header><ion-card-title>Actions rapides</ion-card-title></ion-card-header>
+  <ion-card-content>
+    <div class="actions">
+      <!-- Goes to the public pros list; from there client chooses a pro and books -->
+      <ion-button routerLink="/client/pros">Prendre un rendez-vous</ion-button>
+      <!-- Optional: direct link to my RDVs -->
+      <ion-button fill="outline" routerLink="/client/rdv" class="spaced">Voir mes rendez-vous</ion-button>
+    </div>
+  </ion-card-content>
+</ion-card>
+

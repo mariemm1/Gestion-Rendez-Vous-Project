@@ -8,59 +8,71 @@ const Notification = require("../models/notification");
 const verifyToken = require("../middleware/auth");
 const authorizeRoles = require("../middleware/role");
 
-// ✅ Validate chosen date/hour against professional windows & double-booking
-const jour = new Date(date).toISOString().substring(0,10);
-
-// 1) Ensure the pro has at least one window for that day
-const proWithDay = await Professionnel.findOne({ _id: professionnel._id, 'disponibilites.date': new Date(jour) });
-if (!proWithDay) return res.status(400).send({ message: "Pas de disponibilité ce jour." });
-
-// 2) Check time is inside one of the day windows
-const dayWins = proWithDay.disponibilites.filter(w => new Date(w.date).toISOString().substring(0,10) === jour);
-const inRange = dayWins.some(w => (heure >= w.heure_debut) && (heure < w.heure_fin));
-if (!inRange) return res.status(400).send({ message: "Heure hors créneau." });
-
-// 3) Check not already booked (non Annulé)
-const exists = await RendezVous.findOne({
-  professionnel_id: professionnel._id,
-  date: new Date(jour),
-  heure,
-  statut: { $ne: 'Annulé' }
-});
-if (exists) return res.status(400).send({ message: "Créneau déjà réservé." });
-
 const router = express.Router();
 
 // ✅ Ajouter une notification lors de la prise de rendez-vous (client only)
+//    + validations de créneau (pro dispo ce jour, heure dans fenêtre, pas déjà pris)
 router.post("/prendre/:clientId", verifyToken, authorizeRoles("CLIENT"), async (req, res) => {
   try {
-    const { date, heure, professionnel_id } = req.body;  // professionnel_id = userId du professionnel
+    const { date, heure, professionnel_id } = req.body; // professionnel_id = userId du professionnel
     const { clientId } = req.params;
 
-    // Vérifier que l'utilisateur connecté est bien le client
+    // 0) Sécurité: vérifier user = client
     const client = await Client.findById(clientId);
     if (!client) return res.status(404).send({ message: "Client non trouvé" });
     if (req.user.userId !== client.userId.toString()) {
       return res.status(403).send({ message: "Accès refusé." });
     }
 
-    // Chercher le professionnel par userId (pas _id)
+    // 1) Récup pro par userId (pas _id)
     const professionnel = await Professionnel.findOne({ userId: professionnel_id });
     if (!professionnel) return res.status(404).send({ message: "Professionnel non trouvé" });
 
-    const newRendezVous = new RendezVous({
-      date,
+    // 2) Normaliser la date du jour [00:00 -> 24:00[
+    const picked = new Date(date); // "YYYY-MM-DD"
+    const dayStart = new Date(picked.getFullYear(), picked.getMonth(), picked.getDate());
+    const dayEnd   = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+
+    // 3) Le pro a-t-il des dispos ce jour ?
+    const proWithDay = await Professionnel.findOne({
+      _id: professionnel._id,
+      'disponibilites.date': { $gte: dayStart, $lt: dayEnd }
+    });
+    if (!proWithDay) return res.status(400).send({ message: "Pas de disponibilité ce jour." });
+
+    // 4) L'heure demandée est-elle dans une de ses fenêtres de la journée ?
+    const windowsThisDay = proWithDay.disponibilites.filter(w => {
+      const d = new Date(w.date);
+      return d >= dayStart && d < dayEnd;
+    });
+    // Heure "HH:mm" doit être dans [heure_debut, heure_fin[
+    const inside = windowsThisDay.some(w => (heure >= w.heure_debut) && (heure < w.heure_fin));
+    if (!inside) return res.status(400).send({ message: "Heure hors créneau." });
+
+    // 5) Le créneau n’est pas déjà pris ?
+    const clash = await RendezVous.findOne({
+      professionnel_id: professionnel._id,
+      date: { $gte: dayStart, $lt: dayEnd },
       heure,
+      statut: { $ne: "Annulé" }
+    });
+    if (clash) return res.status(400).send({ message: "Créneau déjà réservé." });
+
+    // 6) Créer RDV
+    const newRendezVous = new RendezVous({
+      date: dayStart,                 // on stocke la date normalisée du jour
+      heure,                          // "HH:mm"
       client_id: client._id,
       professionnel_id: professionnel._id,
       statut: "En attente",
     });
-
     await newRendezVous.save();
 
+    // 7) Ajout à l'historique du client
     client.historiqueRendezVous.push(newRendezVous._id);
     await client.save();
 
+    // 8) Notifier le pro
     await new Notification({
       type: "Rendez-vous",
       role: "PROFESSIONNEL",
@@ -68,12 +80,13 @@ router.post("/prendre/:clientId", verifyToken, authorizeRoles("CLIENT"), async (
       utilisateur_id: professionnel._id,
     }).save();
 
-    res.status(201).json({ message: "Rendez-vous pris avec succès.", rendezvous: newRendezVous });
+    return res.status(201).json({ message: "Rendez-vous pris avec succès.", rendezvous: newRendezVous });
   } catch (error) {
     console.error(error);
-    res.status(500).send({ message: error.message });
+    return res.status(500).send({ message: error.message });
   }
 });
+
 
 //  Annulation de rendez-vous (client only)
 router.put("/annuler/:clientUserId/:rendezvousId", verifyToken, authorizeRoles("CLIENT"), async (req, res) => {
@@ -190,73 +203,57 @@ router.get("/client/:clientUserId", verifyToken, authorizeRoles("CLIENT"), async
 
 
 // Get all RDVs of a professional
-router.get("/professionnel/:userId", verifyToken, authorizeRoles("PROFESSIONNEL"), async (req, res) => {
-  try {
-    const { userId } = req.params;
+router.get("/professionnel/:userId",
+  verifyToken, authorizeRoles("PROFESSIONNEL"), async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const pro = await Professionnel.findOne({ userId });
+      if (!pro) return res.status(404).send({ message: "Professionnel non trouvé" });
 
-    // Get the professionnel record by userId
-    const professionnel = await Professionnel.findOne({ userId });
-    if (!professionnel) return res.status(404).send({ message: "Professionnel non trouvé" });
+      const rdvs = await RendezVous.find({ professionnel_id: pro._id })
+        .populate({ path: "client_id", populate: { path: "userId", select: "nom email" } })
+        .sort({ date: 1, heure: 1 });
 
-    const rdvs = await RendezVous.find({ professionnel_id: professionnel._id }).populate("client_id");
-
-    res.status(200).send(rdvs);
-  } catch (error) {
-    res.status(500).send({ message: error.message });
-  }
-});
+      res.status(200).send(rdvs);
+    } catch (e) { res.status(500).send({ message: e.message }); }
+  });
 
 // Get all RDVs en-attente of a professional
-router.get("/professionnel/:userId/en-attente", verifyToken, authorizeRoles("PROFESSIONNEL"), async (req, res) => {
-  try {
-    const { userId } = req.params;
+router.get("/professionnel/:userId/en-attente",
+  verifyToken, authorizeRoles("PROFESSIONNEL"), async (req, res) => {
+    try {
+      const { userId } = req.params;
+      if (req.user.userId !== userId) return res.status(403).json({ message: "Accès refusé" });
 
-    if (req.user.userId !== userId) {
-      return res.status(403).json({ message: "Accès refusé" });
-    }
+      const pro = await Professionnel.findOne({ userId });
+      if (!pro) return res.status(404).json({ message: "Professionnel non trouvé" });
 
-    const professionnel = await Professionnel.findOne({ userId });
-    if (!professionnel) {
-      return res.status(404).json({ message: "Professionnel non trouvé" });
-    }
+      const rdvs = await RendezVous.find({ professionnel_id: pro._id, statut: "En attente" })
+        .populate({ path: "client_id", populate: { path: "userId", select: "nom email" } })
+        .sort({ date: 1, heure: 1 });
 
-    const rdvsEnAttente = await RendezVous.find({
-      professionnel_id: professionnel._id,
-      statut: "En attente"
-    }).populate("client_id");
+      res.status(200).json(rdvs);
+    } catch (e) { res.status(500).json({ message: e.message }); }
+  });
 
-    res.status(200).json(rdvsEnAttente);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
-  }
-});
 
 // Get all RDVs confirme of a professional
-router.get("/professionnel/:userId/confirme", verifyToken, authorizeRoles("PROFESSIONNEL"), async (req, res) => {
-  try {
-    const { userId } = req.params;
+router.get("/professionnel/:userId/confirme",
+  verifyToken, authorizeRoles("PROFESSIONNEL"), async (req, res) => {
+    try {
+      const { userId } = req.params;
+      if (req.user.userId !== userId) return res.status(403).json({ message: "Accès refusé" });
 
-    if (req.user.userId !== userId) {
-      return res.status(403).json({ message: "Accès refusé" });
-    }
+      const pro = await Professionnel.findOne({ userId });
+      if (!pro) return res.status(404).json({ message: "Professionnel non trouvé" });
 
-    const professionnel = await Professionnel.findOne({ userId });
-    if (!professionnel) {
-      return res.status(404).json({ message: "Professionnel non trouvé" });
-    }
+      const rdvs = await RendezVous.find({ professionnel_id: pro._id, statut: "Confirmé" })
+        .populate({ path: "client_id", populate: { path: "userId", select: "nom email" } })
+        .sort({ date: 1, heure: 1 });
 
-    const rdvsConfirmes = await RendezVous.find({
-      professionnel_id: professionnel._id,
-      statut: "Confirmé"
-    }).populate("client_id");
-
-    res.status(200).json(rdvsConfirmes);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
-  }
-});
+      res.status(200).json(rdvs);
+    } catch (e) { res.status(500).json({ message: e.message }); }
+  });
 
 
 
