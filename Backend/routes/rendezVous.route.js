@@ -8,6 +8,27 @@ const Notification = require("../models/notification");
 const verifyToken = require("../middleware/auth");
 const authorizeRoles = require("../middleware/role");
 
+// ✅ Validate chosen date/hour against professional windows & double-booking
+const jour = new Date(date).toISOString().substring(0,10);
+
+// 1) Ensure the pro has at least one window for that day
+const proWithDay = await Professionnel.findOne({ _id: professionnel._id, 'disponibilites.date': new Date(jour) });
+if (!proWithDay) return res.status(400).send({ message: "Pas de disponibilité ce jour." });
+
+// 2) Check time is inside one of the day windows
+const dayWins = proWithDay.disponibilites.filter(w => new Date(w.date).toISOString().substring(0,10) === jour);
+const inRange = dayWins.some(w => (heure >= w.heure_debut) && (heure < w.heure_fin));
+if (!inRange) return res.status(400).send({ message: "Heure hors créneau." });
+
+// 3) Check not already booked (non Annulé)
+const exists = await RendezVous.findOne({
+  professionnel_id: professionnel._id,
+  date: new Date(jour),
+  heure,
+  statut: { $ne: 'Annulé' }
+});
+if (exists) return res.status(400).send({ message: "Créneau déjà réservé." });
+
 const router = express.Router();
 
 // ✅ Ajouter une notification lors de la prise de rendez-vous (client only)
