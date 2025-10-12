@@ -1,3 +1,4 @@
+// src/app/pages/pro-dispos/pro-dispos.page.ts
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -6,7 +7,6 @@ import {
 } from '@ionic/angular/standalone';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ProService } from '../../services/pro/pro';
-import { AuthService } from '../../services/auth/auth';
 
 @Component({
   selector: 'app-pro-dispos',
@@ -19,8 +19,7 @@ import { AuthService } from '../../services/auth/auth';
 })
 export class ProDisposPage {
   msg = '';
-  // We’ll display unique windows as returned by computed endpoint.
-  list: { date: string; heure_debut: string; heure_fin: string }[] = [];
+  list: { _id: string; date: string; heure_debut: string; heure_fin: string }[] = [];
 
   form = this.fb.group({
     date: ['', Validators.required],           // YYYY-MM-DD
@@ -28,29 +27,33 @@ export class ProDisposPage {
     heure_fin: ['', Validators.required],      // HH:mm
   });
 
-  constructor(private fb: FormBuilder, private proSvc: ProService, private auth: AuthService) {
+  constructor(private fb: FormBuilder, private proSvc: ProService) {
     this.reload();
   }
 
   reload() {
-    const uid = this.auth.userId!;
-    this.proSvc.getDisponibilites(uid).subscribe(wins => {
-      this.list = wins.map(w => ({ date: w.date, heure_debut: w.heure_debut, heure_fin: w.heure_fin }));
+    this.proSvc.getMyDisponibilites().subscribe(wins => {
+      // normalize date to YYYY-MM-DD for display
+      this.list = (wins || []).map(w => ({
+        _id: w._id,
+        date: new Date(w.date).toISOString().substring(0,10),
+        heure_debut: w.heure_debut,
+        heure_fin: w.heure_fin
+      }));
     });
   }
 
   add() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-    const uid = this.auth.userId!;
-    this.proSvc.addDisponibilite(uid, this.form.value as any).subscribe({
+    const w = this.form.value as any; // {date, heure_debut, heure_fin}
+    this.proSvc.addMyDisponibilites([w]).subscribe({
       next: () => { this.msg = 'Créneau ajouté'; this.form.reset(); this.reload(); },
       error: e => { this.msg = e?.error?.message || 'Erreur'; }
     });
   }
 
-  remove(win: { date: string; heure_debut: string; heure_fin: string }) {
-    const uid = this.auth.userId!;
-    this.proSvc.deleteDisponibilite(uid, win).subscribe({
+  remove(win: { _id: string }) {
+    this.proSvc.deleteMyDisponibilite(win._id).subscribe({
       next: () => { this.msg = 'Créneau supprimé'; this.reload(); },
       error: e => { this.msg = e?.error?.message || 'Erreur'; }
     });

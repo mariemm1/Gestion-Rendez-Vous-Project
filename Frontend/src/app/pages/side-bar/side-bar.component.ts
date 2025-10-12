@@ -49,33 +49,35 @@ export class SideBarComponent implements OnInit, OnDestroy {
   header = computed(() => `${this.title()} — Gestion RDV`);
 
   menuItems = computed<MenuItem[]>(() => {
-    const r = this.role();
-    if (r === 'ADMIN') {
-      return [
-        { label: 'Dashboard', icon: 'shield-checkmark', to: '/admin/dashboard' },
-        { label: 'Professionnels', icon: 'people', to: '/admin/pro' },
-        { label: 'Clients', icon: 'person', to: '/admin/client' },
-        { label: 'Rendez-vous', icon: 'calendar', to: '/admin/rdv' },
-        { label: 'Paramètres', icon: 'settings', to: '/admin/settings' },
-      ];
-    }
-    if (r === 'PROFESSIONNEL') {
-      return [
-        { label: 'Dashboard', icon: 'home', to: '/pro/dashboard' },
-        { label: 'Mes Rendez-vous', icon: 'calendar', to: '/pro/rdv' },
-        { label: 'En attente', icon: 'notifications', to: '/pro/rdv-en-attente' },
-        { label: 'Confirmés', icon: 'calendar', to: '/pro/rdv-confirmes' },
-        { label: 'Profil', icon: 'person', to: '/pro/profil' },
-      ];
-    }
+  const r = this.role();
+  if (r === 'ADMIN') {
     return [
-      { label: 'Dashboard', icon: 'home', to: '/client/dashboard' },
-      { label: 'Mes Rendez-vous', icon: 'calendar', to: '/client/rdv' },
-      { label: 'Notifications', icon: 'notifications', to: '/client/notif' },
-      { label: 'Profil', icon: 'person', to: '/client/profil' },
+      { label: 'Dashboard', icon: 'shield-checkmark', to: '/admin/dashboard' },
+      { label: 'Professionnels', icon: 'people', to: '/admin/pro' },
+      { label: 'Clients', icon: 'person', to: '/admin/client' },
+      { label: 'Rendez-vous', icon: 'calendar', to: '/admin/rdv' },
+      { label: 'Paramètres', icon: 'settings', to: '/admin/settings' },
     ];
-  });
-
+  }
+  if (r === 'PROFESSIONNEL') {
+    return [
+      { label: 'Dashboard', icon: 'home', to: '/pro/dashboard' },
+      { label: 'Mes Rendez-vous', icon: 'calendar', to: '/pro/rdv' },
+      { label: 'En attente', icon: 'notifications', to: '/pro/rdv-en-attente' },
+      { label: 'Confirmés', icon: 'calendar', to: '/pro/rdv-confirmes' },
+      { label: 'Mes disponibilités', icon: 'calendar', to: '/pro/dispos' },
+      { label: 'Profil', icon: 'person', to: '/pro/profil' },
+    ];
+  }
+  // CLIENT
+  return [
+    { label: 'Dashboard', icon: 'home', to: '/client/dashboard' },
+    { label: 'Mes Rendez-vous', icon: 'calendar', to: '/client/rdv' },
+    { label: 'Notifications', icon: 'notifications', to: '/client/notif' },
+    { label: 'Trouver un professionnel', icon: 'people', to: '/client/pros' },
+    { label: 'Profil', icon: 'person', to: '/client/profil' },
+  ];
+});
   notifLink = computed(() => {
     const r = this.role();
     if (r === 'ADMIN') return '/admin/rdv';

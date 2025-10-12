@@ -1,4 +1,3 @@
-// src/app/app.routes.ts
 import { Routes } from '@angular/router';
 import { authGuard, roleGuard } from './guards/auth-guard';
 
@@ -9,7 +8,7 @@ export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./pages/login/login.page').then(m => m.LoginPage) },
   { path: 'register', loadComponent: () => import('./pages/register/register.page').then(m => m.RegisterPage) },
 
-  // -------- Optional Tabs area (generic) --------
+  // Optional tabs (unchanged)
   {
     path: 'tabs',
     canActivate: [authGuard],
@@ -21,7 +20,7 @@ export const routes: Routes = [
     ]
   },
 
-  // -------- CLIENT area (with shell: sidebar + navbar) --------
+  // -------- CLIENT area --------
   {
     path: 'client',
     canActivate: [authGuard, roleGuard(['CLIENT'])],
@@ -30,8 +29,11 @@ export const routes: Routes = [
       { path: 'dashboard', loadComponent: () => import('./pages/dashboard-client/dashboard-client.page').then(m => m.DashboardClientPage) },
       { path: 'rdv',       loadComponent: () => import('./pages/rdv/rdv.page').then(m => m.RdvPage) },
       { path: 'notif',     loadComponent: () => import('./pages/notif/notif.page').then(m => m.NotifPage) },
-      { path: 'client/pros', loadComponent: () => import('./pages/client-pro-list/client-pro-list.page').then(m => m.ClientProListPage) },
-      { path: 'client/book/:id', loadComponent: () => import('./pages/client-book/client-book.page').then(m => m.ClientBookPage) },
+
+      // 👇 children MUST NOT repeat "client/"
+      { path: 'pros',      loadComponent: () => import('./pages/client-pro-list/client-pro-list.page').then(m => m.ClientProListPage) },
+      { path: 'book/:id',  loadComponent: () => import('./pages/client-book/client-book.page').then(m => m.ClientBookPage) },
+
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ]
   },
@@ -44,9 +46,12 @@ export const routes: Routes = [
     children: [
       { path: 'dashboard',      loadComponent: () => import('./pages/dashboard-pro/dashboard-pro.page').then(m => m.DashboardProPage) },
       { path: 'rdv',            loadComponent: () => import('./pages/rdv/rdv.page').then(m => m.RdvPage) },
-      { path: 'rdv-en-attente', loadComponent: () => import('./pages/rdv/rdv.page').then(m => m.RdvPage) },  // reuse for now
+      { path: 'rdv-en-attente', loadComponent: () => import('./pages/rdv/rdv.page').then(m => m.RdvPage) },
       { path: 'rdv-confirmes',  loadComponent: () => import('./pages/rdv/rdv.page').then(m => m.RdvPage) },
-      { path: 'pro/dispos', loadComponent: () => import('./pages/pro-dispos/pro-dispos.page').then(m => m.ProDisposPage) },
+
+      // 👇 use the same segment you navigate to
+      { path: 'dispos',         loadComponent: () => import('./pages/pro-dispos/pro-dispos.page').then(m => m.ProDisposPage) },
+
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ]
   },
@@ -63,23 +68,15 @@ export const routes: Routes = [
     ]
   },
 
-  // Optional direct access to dashboards (if you still want these plain routes)
+  // (Optional direct paths – keep only if you still use them elsewhere)
   { path: 'dashboard-client', loadComponent: () => import('./pages/dashboard-client/dashboard-client.page').then(m => m.DashboardClientPage) },
   { path: 'dashboard-pro',    loadComponent: () => import('./pages/dashboard-pro/dashboard-pro.page').then(m => m.DashboardProPage) },
   { path: 'dashboard-admin',  loadComponent: () => import('./pages/dashboard-admin/dashboard-admin.page').then(m => m.DashboardAdminPage) },
 
-  // Fallback
+  // ❌ remove the extra top-level duplicates; they caused confusion
+  // { path: 'pro-dispos', ... }
+  // { path: 'client-pro-list', ... }
+  // { path: 'client-book', ... }
+
   { path: '**', redirectTo: 'login' },
-  {
-    path: 'pro-dispos',
-    loadComponent: () => import('./pages/pro-dispos/pro-dispos.page').then( m => m.ProDisposPage)
-  },
-  {
-    path: 'client-pro-list',
-    loadComponent: () => import('./pages/client-pro-list/client-pro-list.page').then( m => m.ClientProListPage)
-  },
-  {
-    path: 'client-book',
-    loadComponent: () => import('./pages/client-book/client-book.page').then( m => m.ClientBookPage)
-  },
 ];

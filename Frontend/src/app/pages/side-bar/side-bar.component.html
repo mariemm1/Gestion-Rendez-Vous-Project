@@ -35,6 +35,12 @@
         <ion-badge class="notif-badge" *ngIf="unread() > 0" color="danger">{{ unread() }}</ion-badge>
       </ion-button>
 
+      <!-- find a pro -->
+      <ion-button *ngIf="role() === 'CLIENT'" routerLink="/client/pros">
+        <ion-icon slot="start" name="people"></ion-icon>
+        Trouver un pro
+      </ion-button>
+
       <ion-button fill="clear" disabled="true" style="pointer-events:none;">
         BONJOUR {{ userName || '' }}
       </ion-button>

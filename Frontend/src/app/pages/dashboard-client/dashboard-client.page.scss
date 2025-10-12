@@ -1,2 +1,5 @@
 /* Make lines read nicely */
 .line { margin: 6px 0; }
+
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.spaced { margin-left: 8px; }

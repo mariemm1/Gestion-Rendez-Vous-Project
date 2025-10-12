@@ -5,6 +5,19 @@
   </ion-card-content>
 </ion-card>
 
+<!-- Manage availability -->
+<!-- dashboard-pro.page.html (only this change) -->
+<ion-card>
+  <ion-card-header><ion-card-title>Mes disponibilités</ion-card-title></ion-card-header>
+  <ion-card-content>
+    Définissez vos créneaux disponibles pour permettre la prise de rendez-vous.
+    <div style="margin-top:8px">
+      <!-- ✅ fix: use plural 'dispos' to match your routes -->
+      <ion-button routerLink="/pro/dispos">Gérer mes disponibilités</ion-button>
+    </div>
+  </ion-card-content>
+</ion-card>
+
 <ion-card>
   <ion-card-header><ion-card-title>Rendez-vous en attente</ion-card-title></ion-card-header>
   <ion-card-content>
@@ -15,6 +28,7 @@
     </div>
   </ion-card-content>
 </ion-card>
+
 
 <ion-card>
   <ion-card-header><ion-card-title>Rendez-vous confirmés</ion-card-title></ion-card-header>
