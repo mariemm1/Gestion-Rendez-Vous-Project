@@ -10,7 +10,7 @@ import { RendezVous } from '../../models/rendezvous/rendezvous';
 export class RdvService {
   private base = `${environment.apiUrl}/rendezVous`; // capital V
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   // Client
   getClientRdvs(clientUserId: string): Observable<RendezVous[]> {
@@ -39,4 +39,9 @@ export class RdvService {
   confirmByPro(userId: string, rendezvousId: string) {
     return this.http.put(`${this.base}/confirmer/${userId}/${rendezvousId}`, {});
   }
+  // Book using pro's userId + selected date/hour
+  book(clientId: string, proUserId: string, payload: { date: string; heure: string }) {
+    return this.http.post(`${this.base}/prendre/${clientId}`, { ...payload, professionnel_id: proUserId });
+  }
+
 }

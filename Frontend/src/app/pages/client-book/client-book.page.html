@@ -1,0 +1,23 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Réserver un rendez-vous</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-note *ngIf="!days.length">Aucune disponibilité trouvée.</ion-note>
+
+  <ion-segment [(ngModel)]="selectedDay" *ngIf="days.length">
+    <ion-segment-button *ngFor="let d of days" [value]="d.date">{{ d.date }}</ion-segment-button>
+  </ion-segment>
+
+  <h2 class="ion-margin-top" *ngIf="selectedDay">Créneaux libres</h2>
+  <ion-list *ngIf="selectedDay">
+    <ion-item *ngFor="let s of slots()">
+      <ion-label>{{ s }}</ion-label>
+      <ion-button slot="end" (click)="book(s)">Réserver</ion-button>
+    </ion-item>
+  </ion-list>
+
+  <ion-note color="primary" *ngIf="msg" class="ion-margin-top">{{ msg }}</ion-note>
+</ion-content>
