@@ -1,45 +1,67 @@
 import { Component } from '@angular/core';
-import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
-import { IonicModule, ToastController } from '@ionic/angular';
 import { Router } from '@angular/router';
+import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
+import {
+  IonContent, IonHeader, IonToolbar, IonTitle, IonInput, IonItem, IonLabel,
+  IonButton, IonIcon, IonNote, IonList
+} from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth/auth';
+import { addIcons } from 'ionicons';
+import { logIn, eye, eyeOff, mail, lockClosed } from 'ionicons/icons';
+
 
 @Component({
   standalone: true,
   selector: 'app-login',
-  imports: [IonicModule, CommonModule, ReactiveFormsModule],
   templateUrl: './login.page.html',
   styleUrls: ['./login.page.scss'],
+  imports: [
+    CommonModule, ReactiveFormsModule,
+    IonContent, IonHeader, IonToolbar, IonTitle,
+    IonInput, IonItem, IonLabel, IonButton, IonIcon, IonNote, IonList
+  ],
 })
+
 export class LoginPage {
+  showPwd = false;
+  errorMsg = '';
+
   form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
-    pwd: ['', [Validators.required, Validators.minLength(6)]],
+    password: ['', [Validators.required, Validators.minLength(6)]],
   });
-
-  loading = false;
 
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
-    private router: Router,
-    private toast: ToastController
-  ) {}
+    private router: Router
+  ) {
+    addIcons({ logIn, eye, eyeOff, mail, lockClosed });
+  }
 
-  async onSubmit() {
-    if (this.form.invalid) return;
-    this.loading = true;
-    this.auth.login(this.form.value as any).subscribe({
-      next: async () => {
-        this.loading = false;
-        await (await this.toast.create({ message: 'Welcome!', duration: 1200 })).present();
-        this.router.navigateByUrl('/tabs/home');
+  get email() { return this.form.get('email'); }
+  get password() { return this.form.get('password'); }
+
+  submit() {
+    this.errorMsg = '';
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    const dto = this.form.value as { email: string; password: string };
+
+    this.auth.login(dto).subscribe({
+      next: () => {
+        // Redirect per role
+        const role = this.auth.role;
+        if (role === 'ADMIN') this.router.navigateByUrl('/admin/dashboard');
+        else if (role === 'PROFESSIONNEL') this.router.navigateByUrl('/pro/dashboard');
+        else this.router.navigateByUrl('/client/dashboard');
       },
-      error: async (e) => {
-        this.loading = false;
-        await (await this.toast.create({ message: e?.error?.message || 'Login failed', color: 'danger', duration: 1800 })).present();
-      }
+      error: (err) => {
+        this.errorMsg = err?.error?.message || 'Échec de connexion';
+      },
     });
   }
 }

@@ -1,0 +1,28 @@
+<ion-card>
+  <ion-card-header><ion-card-title>Espace Professionnel</ion-card-title></ion-card-header>
+  <ion-card-content>
+    Rôle: PROFESSIONNEL — ID: {{ uid }}
+  </ion-card-content>
+</ion-card>
+
+<ion-card>
+  <ion-card-header><ion-card-title>Rendez-vous en attente</ion-card-title></ion-card-header>
+  <ion-card-content>
+    <div *ngIf="pending?.length; else noneP">• {{ pending.length }} en attente</div>
+    <ng-template #noneP>Aucun en attente.</ng-template>
+    <div style="margin-top:8px">
+      <ion-button size="small" (click)="goPending()">Voir la liste</ion-button>
+    </div>
+  </ion-card-content>
+</ion-card>
+
+<ion-card>
+  <ion-card-header><ion-card-title>Rendez-vous confirmés</ion-card-title></ion-card-header>
+  <ion-card-content>
+    <div *ngIf="confirmed?.length; else noneC">• {{ confirmed.length }} confirmés</div>
+    <ng-template #noneC>Aucun confirmé.</ng-template>
+    <div style="margin-top:8px">
+      <ion-button size="small" (click)="goConfirmed()">Voir la liste</ion-button>
+    </div>
+  </ion-card-content>
+</ion-card>

@@ -1,0 +1,17 @@
+:host { display: block; height: 100%; }
+
+ion-content {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 12px;
+  --padding-bottom: 16px;
+}
+
+.notif-btn { position: relative; min-width: 44px; }
+.notif-badge {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  transform: translate(25%, -25%);
+  z-index: 2;
+}

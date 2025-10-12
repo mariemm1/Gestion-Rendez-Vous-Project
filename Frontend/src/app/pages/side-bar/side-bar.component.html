@@ -1,0 +1,53 @@
+<!-- Sidebar -->
+<ion-menu menuId="mainMenu" contentId="main-content" type="overlay">
+  <ion-header>
+    <ion-toolbar>
+      <ion-title>{{ title() }}</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-content>
+    <ion-list>
+      <ion-menu-toggle auto-hide="true" *ngFor="let m of menuItems()">
+        <ion-item [routerLink]="m.to">
+          <ion-icon slot="start" [name]="m.icon"></ion-icon>
+          <ion-label>{{ m.label }}</ion-label>
+        </ion-item>
+      </ion-menu-toggle>
+    </ion-list>
+  </ion-content>
+</ion-menu>
+
+<!-- Main -->
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <!-- ⬇️ explicitly target the menu -->
+      <ion-menu-button [menu]="'mainMenu'"></ion-menu-button>
+    </ion-buttons>
+
+    <ion-title>{{ header() }}</ion-title>
+
+    <ion-buttons slot="end">
+      <!-- Bell in top bar -->
+      <ion-button class="notif-btn" [routerLink]="notifLink()">
+        <ion-icon slot="icon-only" name="notifications"></ion-icon>
+        <ion-badge class="notif-badge" *ngIf="unread() > 0" color="danger">{{ unread() }}</ion-badge>
+      </ion-button>
+
+      <ion-button fill="clear" disabled="true" style="pointer-events:none;">
+        BONJOUR {{ userName || '' }}
+      </ion-button>
+
+      <ion-button (click)="logout()">
+        <ion-icon slot="start" name="log-out"></ion-icon>
+        LOGOUT
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<!-- Must match contentId above -->
+<ion-content id="main-content" [fullscreen]="true">
+  <router-outlet></router-outlet>
+</ion-content>
