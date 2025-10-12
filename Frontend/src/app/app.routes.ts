@@ -30,6 +30,8 @@ export const routes: Routes = [
       { path: 'dashboard', loadComponent: () => import('./pages/dashboard-client/dashboard-client.page').then(m => m.DashboardClientPage) },
       { path: 'rdv',       loadComponent: () => import('./pages/rdv/rdv.page').then(m => m.RdvPage) },
       { path: 'notif',     loadComponent: () => import('./pages/notif/notif.page').then(m => m.NotifPage) },
+      { path: 'client/pros', loadComponent: () => import('./pages/client-pro-list/client-pro-list.page').then(m => m.ClientProListPage) },
+      { path: 'client/book/:id', loadComponent: () => import('./pages/client-book/client-book.page').then(m => m.ClientBookPage) },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ]
   },
@@ -44,6 +46,7 @@ export const routes: Routes = [
       { path: 'rdv',            loadComponent: () => import('./pages/rdv/rdv.page').then(m => m.RdvPage) },
       { path: 'rdv-en-attente', loadComponent: () => import('./pages/rdv/rdv.page').then(m => m.RdvPage) },  // reuse for now
       { path: 'rdv-confirmes',  loadComponent: () => import('./pages/rdv/rdv.page').then(m => m.RdvPage) },
+      { path: 'pro/dispos', loadComponent: () => import('./pages/pro-dispos/pro-dispos.page').then(m => m.ProDisposPage) },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ]
   },
@@ -67,4 +70,16 @@ export const routes: Routes = [
 
   // Fallback
   { path: '**', redirectTo: 'login' },
+  {
+    path: 'pro-dispos',
+    loadComponent: () => import('./pages/pro-dispos/pro-dispos.page').then( m => m.ProDisposPage)
+  },
+  {
+    path: 'client-pro-list',
+    loadComponent: () => import('./pages/client-pro-list/client-pro-list.page').then( m => m.ClientProListPage)
+  },
+  {
+    path: 'client-book',
+    loadComponent: () => import('./pages/client-book/client-book.page').then( m => m.ClientBookPage)
+  },
 ];

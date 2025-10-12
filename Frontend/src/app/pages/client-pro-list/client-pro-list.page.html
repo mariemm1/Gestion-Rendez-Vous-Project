@@ -1,0 +1,18 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Professionnels</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-searchbar [(ngModel)]="q" placeholder="Chercher (nom, spécialité)"></ion-searchbar>
+  <ion-list>
+    <ion-item button *ngFor="let p of filtered()" (click)="open(p)">
+      <ion-label>
+        <div><b>{{ p.nom }}</b></div>
+        <div>{{ p.specialite }}</div>
+        <div style="opacity:.7">{{ p.email }}</div>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+</ion-content>
