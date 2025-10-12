@@ -7,6 +7,7 @@
 <ion-content class="ion-padding">
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <ion-list>
+      <!-- Name -->
       <ion-item>
         <ion-icon slot="start" name="person"></ion-icon>
         <ion-input
@@ -20,6 +21,7 @@
         Nom requis (min 2 caractères).
       </ion-note>
 
+      <!-- Email -->
       <ion-item>
         <ion-icon slot="start" name="mail"></ion-icon>
         <ion-input
@@ -34,6 +36,7 @@
         Email valide requis.
       </ion-note>
 
+      <!-- Password (uses 'pwd' to match backend register) -->
       <ion-item>
         <ion-icon slot="start" name="lock-closed"></ion-icon>
         <ion-input
@@ -43,7 +46,7 @@
           formControlName="pwd"
           placeholder="••••••••">
         </ion-input>
-        <ion-button fill="clear" size="small" (click)="showPwd = !showPwd" type="button">
+        <ion-button fill="clear" size="small" type="button" (click)="showPwd = !showPwd">
           {{ showPwd ? 'Masquer' : 'Afficher' }}
         </ion-button>
       </ion-item>
@@ -51,6 +54,7 @@
         Mot de passe (min 6 caractères).
       </ion-note>
 
+      <!-- Role -->
       <ion-item>
         <ion-label position="stacked">Rôle</ion-label>
         <ion-select formControlName="role" interface="popover">
@@ -58,6 +62,7 @@
         </ion-select>
       </ion-item>
 
+      <!-- Speciality (PRO only) -->
       <ion-item *ngIf="isPro()">
         <ion-icon slot="start" name="briefcase"></ion-icon>
         <ion-input
@@ -72,14 +77,18 @@
       </ion-note>
     </ion-list>
 
+    <!-- Backend error -->
     <ion-note color="danger" *ngIf="errorMsg" class="ion-margin-top">{{ errorMsg }}</ion-note>
 
+    <!-- Submit -->
     <ion-button expand="block" class="ion-margin-top" type="submit">
       <ion-icon slot="start" name="person-add"></ion-icon>
       Créer un compte
     </ion-button>
 
-    <ion-button expand="block" fill="clear" routerLink="/login">
+    <!-- Navigate to login: MUST be type="button" so the form doesn't submit -->
+    <ion-button expand="block" fill="clear" type="button" (click)="goLogin()"
+                routerDirection="back">
       J'ai déjà un compte
     </ion-button>
   </form>

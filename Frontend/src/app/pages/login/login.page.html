@@ -7,6 +7,7 @@
 <ion-content class="ion-padding">
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <ion-list>
+      <!-- Email -->
       <ion-item>
         <ion-icon slot="start" name="mail"></ion-icon>
         <ion-input
@@ -21,6 +22,7 @@
         Entrez un email valide.
       </ion-note>
 
+      <!-- Password -->
       <ion-item>
         <ion-icon slot="start" name="lock-closed"></ion-icon>
         <ion-input
@@ -30,7 +32,8 @@
           labelPlacement="stacked"
           placeholder="••••••••">
         </ion-input>
-        <ion-button fill="clear" size="small" (click)="showPwd = !showPwd" type="button">
+        <!-- Just toggles; does not submit the form -->
+        <ion-button fill="clear" size="small" type="button" (click)="showPwd = !showPwd">
           <ion-icon [name]="showPwd ? 'eye-off' : 'eye'"></ion-icon>
         </ion-button>
       </ion-item>
@@ -39,14 +42,18 @@
       </ion-note>
     </ion-list>
 
+    <!-- Backend error -->
     <ion-note color="danger" *ngIf="errorMsg" class="ion-margin-top">{{ errorMsg }}</ion-note>
 
+    <!-- Submit -->
     <ion-button expand="block" type="submit" class="ion-margin-top">
       <ion-icon slot="start" name="log-in"></ion-icon>
       Se connecter
     </ion-button>
 
-    <ion-button expand="block" fill="clear" routerLink="/register">
+    <!-- Navigate to register: MUST be type="button" so the form doesn't submit -->
+    <ion-button expand="block" fill="clear" type="button" (click)="goRegister()"
+                routerDirection="forward">
       Créer un compte
     </ion-button>
   </form>
