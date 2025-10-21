@@ -1,14 +1,15 @@
+// Backend/models/user.js
 const mongoose = require("mongoose");
 const bcryptjs = require("bcryptjs");
 
 const userSchema = new mongoose.Schema({
-  nom: { type: String, required: true },
+  nom:   { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  pwd: { type: String, required: true },
-  role: { type: String, enum: ["ADMIN", "PROFESSIONNEL", "CLIENT"], required: true },
+  pwd:   { type: String, required: true },
+  role:  { type: String, enum: ["ADMIN", "PROFESSIONNEL", "CLIENT"], required: true },
+  avatarUrl: { type: String, default: "" }   //  <-- add this
 }, { timestamps: true });
 
-// Hash password before saving if modified
 userSchema.pre("save", async function (next) {
   if (this.isModified("pwd")) {
     this.pwd = await bcryptjs.hash(this.pwd, 10);
@@ -16,7 +17,6 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-// Compare plain password with hashed password
 userSchema.methods.comparePassword = async function (plainPassword) {
   return bcryptjs.compare(plainPassword, this.pwd);
 };

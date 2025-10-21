@@ -1,130 +1,106 @@
-const express = require("express");
+// Backend/routes/notification.route.js
+const express = require('express');
 const router = express.Router();
-const Notification = require("../models/notification");
+const Notification = require('../models/notification');
+const verifyToken = require('../middleware/auth');
+const authorizeRoles = require('../middleware/role');
 
-const verifyToken = require("../middleware/auth");
-const authorizeRoles = require("../middleware/role");
-
-// Add a notification (only CLIENT or PROFESSIONNEL can add their own notifications)
+// Create (client or pro can create for themselves if ever needed)
 router.post(
-  "/add",
+  '/add',
   verifyToken,
-  authorizeRoles("CLIENT", "PROFESSIONNEL"),
+  authorizeRoles('CLIENT', 'PROFESSIONNEL'),
   async (req, res) => {
     try {
-      const { utilisateur_id, role, type, message } = req.body;
+      const { utilisateur_id, role, type, message, rendezvous_id } = req.body;
 
-      // Validate required fields
       if (!utilisateur_id || !role || !type || !message) {
-        return res
-          .status(400)
-          .json({ message: "Tous les champs sont obligatoires" });
+        return res.status(400).json({ message: 'Tous les champs sont obligatoires' });
       }
-
-      // Check if token user matches utilisateur_id and role
       if (req.user.userId !== utilisateur_id) {
-        return res
-          .status(403)
-          .json({ message: "Accès refusé : utilisateur non autorisé" });
+        return res.status(403).json({ message: 'Accès refusé : utilisateur non autorisé' });
       }
       if (req.user.role !== role) {
-        return res.status(403).json({ message: "Accès refusé : rôle invalide" });
+        return res.status(403).json({ message: 'Accès refusé : rôle invalide' });
       }
 
-      const rolesAutorises = ["CLIENT", "PROFESSIONNEL"];
-      if (!rolesAutorises.includes(role)) {
-        return res.status(400).json({ message: "Rôle invalide" });
-      }
-
-      const typesAutorises = ["Rendez-vous", "Annulation", "Rappel"];
-      if (!typesAutorises.includes(type)) {
-        return res.status(400).json({ message: "Type de notification invalide" });
-      }
-
-      const nouvelleNotification = new Notification({
+      const notif = new Notification({
         utilisateur_id,
         role,
         type,
         message,
+        rendezvous_id: rendezvous_id || null,
         lue: false,
-        dateEnvoi: new Date(),
       });
 
-      await nouvelleNotification.save();
-      res.status(201).json({
-        message: "Notification ajoutée avec succès",
-        notification: nouvelleNotification,
-      });
-    } catch (error) {
-      res.status(500).json({ message: "Erreur serveur", erreur: error.message });
+      await notif.save();
+      res.status(201).json({ message: 'Notification ajoutée avec succès', notification: notif });
+    } catch (err) {
+      res.status(500).json({ message: 'Erreur serveur', erreur: err.message });
     }
   }
 );
 
-// Get all notifications of a user (only the user can see their own notifications)
-router.get("/:userId", verifyToken, authorizeRoles("CLIENT", "PROFESSIONNEL"), async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    // Only allow if user is requesting their own notifications
-    if (req.user.userId !== userId) {
-      return res.status(403).json({ message: "Accès refusé" });
-    }
-
-    const notifications = await Notification.find({ utilisateur_id: userId }).sort({
-      dateEnvoi: -1,
-    });
-
-    res.status(200).json(notifications);
-  } catch (error) {
-    res.status(500).json({ message: "Erreur serveur", erreur: error.message });
-  }
-});
-
-// Mark a notification as read (only owner CLIENT or PROFESSIONNEL)
-router.put("/lire/:notificationId", verifyToken, authorizeRoles("CLIENT", "PROFESSIONNEL"), async (req, res) => {
-  try {
-    const { notificationId } = req.params;
-    const notification = await Notification.findById(notificationId);
-    if (!notification) return res.status(404).json({ message: "Notification non trouvée" });
-
-    // Comparaison IDs avec toString()
-    if (req.user.userId !== notification.utilisateur_id.toString()) {
-      return res.status(403).json({ message: "Accès refusé : utilisateur non propriétaire" });
-    }
-
-    notification.lue = true;
-    await notification.save();
-
-    res.status(200).json({ message: "Notification marquée comme lue" });
-  } catch (error) {
-    res.status(500).json({ message: "Erreur serveur", erreur: error.message });
-  }
-});
-
-
-// Delete a notification (only the owner can delete)
-router.delete(
-  "/:notificationId",
+// List all notifications for the connected user
+router.get(
+  '/:userId',
   verifyToken,
-  authorizeRoles("CLIENT", "PROFESSIONNEL"),
+  authorizeRoles('CLIENT', 'PROFESSIONNEL'),
+  async (req, res) => {
+    try {
+      const { userId } = req.params;
+      if (req.user.userId !== userId) return res.status(403).json({ message: 'Accès refusé' });
+
+      const notifications = await Notification.find({ utilisateur_id: userId })
+        .sort({ dateEnvoi: -1 })
+        .lean();
+
+      res.status(200).json(notifications);
+    } catch (err) {
+      res.status(500).json({ message: 'Erreur serveur', erreur: err.message });
+    }
+  }
+);
+
+// Mark one as read
+router.put(
+  '/lire/:notificationId',
+  verifyToken,
+  authorizeRoles('CLIENT', 'PROFESSIONNEL'),
   async (req, res) => {
     try {
       const { notificationId } = req.params;
-      const notification = await Notification.findById(notificationId);
+      const n = await Notification.findById(notificationId);
+      if (!n) return res.status(404).json({ message: 'Notification non trouvée' });
+      if (req.user.userId !== n.utilisateur_id.toString())
+        return res.status(403).json({ message: 'Accès refusé : utilisateur non propriétaire' });
 
-      if (!notification)
-        return res.status(404).json({ message: "Notification non trouvée" });
+      n.lue = true;
+      await n.save();
+      res.status(200).json({ message: 'Notification marquée comme lue' });
+    } catch (err) {
+      res.status(500).json({ message: 'Erreur serveur', erreur: err.message });
+    }
+  }
+);
 
-      // Only owner can delete
-      if (req.user.userId !== notification.utilisateur_id.toString()) {
-        return res.status(403).json({ message: "Accès refusé" });
-      }
+// Delete
+router.delete(
+  '/:notificationId',
+  verifyToken,
+  authorizeRoles('CLIENT', 'PROFESSIONNEL'),
+  async (req, res) => {
+    try {
+      const { notificationId } = req.params;
+      const n = await Notification.findById(notificationId);
+      if (!n) return res.status(404).json({ message: 'Notification non trouvée' });
+      if (req.user.userId !== n.utilisateur_id.toString())
+        return res.status(403).json({ message: 'Accès refusé' });
 
       await Notification.findByIdAndDelete(notificationId);
-      res.status(200).json({ message: "Notification supprimée avec succès" });
-    } catch (error) {
-      res.status(500).json({ message: "Erreur serveur", erreur: error.message });
+      res.status(200).json({ message: 'Notification supprimée avec succès' });
+    } catch (err) {
+      res.status(500).json({ message: 'Erreur serveur', erreur: err.message });
     }
   }
 );

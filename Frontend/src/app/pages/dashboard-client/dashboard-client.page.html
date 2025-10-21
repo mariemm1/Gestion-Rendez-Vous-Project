@@ -1,14 +1,4 @@
-<!-- A big welcome card -->
-<ion-card>
-  <ion-card-header>
-    <ion-card-title>Bienvenue 👋 {{ name }}</ion-card-title>
-  </ion-card-header>
-  <ion-card-content>
-    Rôle: CLIENT — ID: {{ uid }}
-  </ion-card-content>
-</ion-card>
-
-<!-- RDV preview -->
+<!-- RDV preview (next ones only) -->
 <ion-card>
   <ion-card-header><ion-card-title>Mes prochains rendez-vous</ion-card-title></ion-card-header>
   <ion-card-content>
@@ -21,29 +11,24 @@
   </ion-card-content>
 </ion-card>
 
-<!-- Notifications preview -->
-<ion-card>
-  <ion-card-header><ion-card-title>Dernières notifications</ion-card-title></ion-card-header>
-  <ion-card-content>
-    <ng-container *ngIf="notif?.length; else emptyNotif">
-      <div *ngFor="let n of notif" class="line">
-        • [{{ n.type }}] {{ n.message }} ({{ n.dateEnvoi | date:'short' }})
-      </div>
-    </ng-container>
-    <ng-template #emptyNotif>Aucune notification.</ng-template>
-  </ion-card-content>
-</ion-card>
-
 <!-- Quick actions -->
 <ion-card>
   <ion-card-header><ion-card-title>Actions rapides</ion-card-title></ion-card-header>
   <ion-card-content>
     <div class="actions">
-      <!-- Goes to the public pros list; from there client chooses a pro and books -->
       <ion-button routerLink="/client/pros">Prendre un rendez-vous</ion-button>
-      <!-- Optional: direct link to my RDVs -->
       <ion-button fill="outline" routerLink="/client/rdv" class="spaced">Voir mes rendez-vous</ion-button>
     </div>
   </ion-card-content>
 </ion-card>
 
+<!-- Today RDV -->
+<ion-card>
+  <ion-card-header><ion-card-title>Mes rendez-vous aujourd’hui</ion-card-title></ion-card-header>
+  <ion-card-content>
+    <ng-container *ngIf="today?.length; else noneToday">
+      <div *ngFor="let r of today" class="line">• {{ r.heure }} — <b>{{ r.statut }}</b></div>
+    </ng-container>
+    <ng-template #noneToday>Aucun rendez-vous aujourd’hui.</ng-template>
+  </ion-card-content>
+</ion-card>

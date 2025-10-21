@@ -1,3 +1,4 @@
+// src/app/pages/login/login.page.ts
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -6,9 +7,11 @@ import {
   IonButton, IonIcon, IonNote, IonList
 } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../services/auth/auth';
 import { addIcons } from 'ionicons';
 import { logIn, eye, eyeOff, mail, lockClosed } from 'ionicons/icons';
+
+import { AuthService } from '../../services/auth/auth';
+import { UiService } from '../../services/ui/ui.service';
 
 @Component({
   standalone: true,
@@ -22,12 +25,9 @@ import { logIn, eye, eyeOff, mail, lockClosed } from 'ionicons/icons';
   ],
 })
 export class LoginPage {
-  // Toggle password visibility
   showPwd = false;
-  // Server/API error message holder
   errorMsg = '';
 
-  // Reactive form: backend needs email + password
   form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(6)]],
@@ -36,7 +36,8 @@ export class LoginPage {
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    private ui: UiService
   ) {
     addIcons({ logIn, eye, eyeOff, mail, lockClosed });
   }
@@ -44,29 +45,24 @@ export class LoginPage {
   get email()    { return this.form.get('email'); }
   get password() { return this.form.get('password'); }
 
-  // Submit login; route by role after token is saved
-  submit() {
+  async submit() {
     this.errorMsg = '';
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
+    if (this.form.invalid) { this.form.markAllAsTouched(); await this.ui.warn('Champs invalides'); return; }
 
     const dto = this.form.value as { email: string; password: string };
 
-    this.auth.login(dto).subscribe({
-      next: () => {
-        const role = this.auth.role;
-        if (role === 'ADMIN')               this.router.navigateByUrl('/admin/dashboard');
-        else if (role === 'PROFESSIONNEL')  this.router.navigateByUrl('/pro/dashboard');
-        else                                this.router.navigateByUrl('/client/dashboard');
-      },
-      error: (err) => {
-        this.errorMsg = err?.error?.message || 'Échec de connexion';
-      },
-    });
+    try {
+      await this.ui.withLoading(() => this.auth.login(dto).toPromise(), 'Connexion...');
+      await this.ui.success('Bienvenue !');
+      const role = this.auth.role;
+      if (role === 'ADMIN')               this.router.navigateByUrl('/admin/dashboard');
+      else if (role === 'PROFESSIONNEL')  this.router.navigateByUrl('/pro/dashboard');
+      else                                this.router.navigateByUrl('/client/dashboard');
+    } catch (err: any) {
+      this.errorMsg = err?.error?.message || 'Échec de connexion';
+      await this.ui.error(this.errorMsg);
+    }
   }
 
-  // Safe navigation from inside the form (prevents form submit)
   goRegister() { this.router.navigateByUrl('/register'); }
 }

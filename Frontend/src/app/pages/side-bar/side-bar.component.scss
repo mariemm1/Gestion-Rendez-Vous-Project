@@ -7,6 +7,21 @@ ion-content {
   --padding-bottom: 16px;
 }
 
+.app-title {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.app-title .title {
+  font-weight: 700;
+  font-size: 18px;
+}
+.app-title .subtitle {
+  opacity: .7;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
 .notif-btn { position: relative; min-width: 44px; }
 .notif-badge {
   position: absolute;

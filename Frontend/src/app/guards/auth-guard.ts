@@ -1,23 +1,19 @@
-import { Injectable } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+// src/app/guards/auth.guard.ts
+import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { inject } from '@angular/core';
 import { AuthService } from '../services/auth/auth';
 
-export const authGuard: CanActivateFn = () => {
+export const authGuard: CanActivateFn = (): boolean | UrlTree => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  if (auth.isLoggedIn()) return true;
-  router.navigateByUrl('/login');
-  return false;
+  return auth.isLoggedIn() ? true : router.createUrlTree(['/login']);
 };
 
 export function roleGuard(roles: string[]): CanActivateFn {
-  return () => {
+  return (): boolean | UrlTree => {
     const auth = inject(AuthService);
     const router = inject(Router);
     const role = auth.role;
-    if (role && roles.includes(role)) return true;
-    router.navigateByUrl('/tabs/home');
-    return false;
+    return role && roles.includes(role) ? true : router.createUrlTree(['/tabs/home']);
   };
 }

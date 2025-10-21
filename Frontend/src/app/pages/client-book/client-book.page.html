@@ -1,3 +1,4 @@
+<!-- src/app/pages/client-book/client-book.page.html -->
 <ion-header>
   <ion-toolbar>
     <ion-title>Réserver un rendez-vous</ion-title>
@@ -8,14 +9,19 @@
   <ion-note *ngIf="!days.length">Aucune disponibilité trouvée.</ion-note>
 
   <ion-segment [(ngModel)]="selectedDay" *ngIf="days.length">
-    <ion-segment-button *ngFor="let d of days" [value]="d.date">{{ d.date }}</ion-segment-button>
+    <ion-segment-button *ngFor="let d of days" [value]="d.date">
+      {{ d.date | date:'yyyy-MM-dd' }}
+    </ion-segment-button>
   </ion-segment>
 
-  <h2 class="ion-margin-top" *ngIf="selectedDay">Créneaux libres</h2>
+  <h2 class="ion-margin-top" *ngIf="selectedDay">Disponibilités</h2>
   <ion-list *ngIf="selectedDay">
     <ion-item *ngFor="let s of slots()">
       <ion-label>{{ s }}</ion-label>
-      <ion-button slot="end" (click)="book(s)">Réserver</ion-button>
+      <ion-button slot="end" (click)="book(s)" [disabled]="isDisabled(s)">Réserver</ion-button>
+    </ion-item>
+    <ion-item *ngIf="!slots().length">
+      <ion-label>Aucune disponibilité pour cette date.</ion-label>
     </ion-item>
   </ion-list>
 
