@@ -1,36 +1,40 @@
 <!-- src/app/pages/pro-dispos/pro-dispos.page.html -->
+
 <ion-header>
   <ion-toolbar>
-    <ion-title>Mes disponibilités</ion-title>
+    <ion-title>Mes disponibilités</ion-title> <!-- Page title -->
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
+  <!-- Add availability form -->
   <form [formGroup]="form" (ngSubmit)="add()">
     <ion-list>
       <ion-item>
-        <ion-label position="stacked">Date (YYYY-MM-DD)</ion-label>
-        <ion-input formControlName="date" placeholder="2025-10-15"></ion-input>
+        <ion-label position="stacked">Date (YYYY-MM-DD)</ion-label> <!-- Label above input -->
+        <ion-input formControlName="date" placeholder="2025-10-15"></ion-input> <!-- Date field -->
       </ion-item>
       <ion-item>
-        <ion-label position="stacked">Heure début</ion-label>
-        <ion-input formControlName="heure_debut" placeholder="09:00"></ion-input>
+        <ion-label position="stacked">Heure début</ion-label>       <!-- Start time label -->
+        <ion-input formControlName="heure_debut" placeholder="09:00"></ion-input> <!-- Start time input -->
       </ion-item>
       <ion-item>
-        <ion-label position="stacked">Heure fin</ion-label>
-        <ion-input formControlName="heure_fin" placeholder="12:00"></ion-input>
+        <ion-label position="stacked">Heure fin</ion-label>         <!-- End time label -->
+        <ion-input formControlName="heure_fin" placeholder="12:00"></ion-input> <!-- End time input -->
       </ion-item>
     </ion-list>
-    <ion-button expand="block" type="submit">Ajouter</ion-button>
+    <ion-button expand="block" type="submit">Ajouter</ion-button>   <!-- Submit button -->
   </form>
 
+  <!-- Optional message area -->
   <ion-note color="primary" *ngIf="msg" class="ion-margin-top">{{ msg }}</ion-note>
 
+  <!-- Existing windows list -->
   <h2 class="ion-margin-top">Mes créneaux</h2>
   <ion-list>
-    <ion-item *ngFor="let w of list">
-      <ion-label>{{ w.date }} — {{ w.heure_debut }} → {{ w.heure_fin }}</ion-label>
-      <ion-button color="danger" (click)="remove(w)">Supprimer</ion-button>
+    <ion-item *ngFor="let w of list">                              <!-- Iterate each availability -->
+      <ion-label>{{ w.date }} — {{ w.heure_debut }} → {{ w.heure_fin }}</ion-label> <!-- Display range -->
+      <ion-button color="danger" (click)="remove(w)">Supprimer</ion-button> <!-- Delete button -->
     </ion-item>
   </ion-list>
 </ion-content>

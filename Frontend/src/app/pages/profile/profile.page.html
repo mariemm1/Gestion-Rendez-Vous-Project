@@ -1,73 +1,75 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-title>Mon profil</ion-title>
+<!-- src/app/pages/profile/profile.page.html -->
+
+<ion-header>                                                                           <!-- Ionic page header -->
+  <ion-toolbar>                                                                         <!-- Toolbar container -->
+    <ion-title>Mon profil</ion-title>                                                   <!-- Title text -->
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  <ng-container *ngIf="user as u; else loadingUser">
+<ion-content class="ion-padding">                                                       <!-- Scrollable page content with padding -->
+  <ng-container *ngIf="user as u; else loadingUser">                                    <!-- Render content if user loaded; else show template -->
 
     <!-- Header card -->
-    <ion-item lines="none" class="ion-margin-bottom">
-      <ion-avatar slot="start">
+    <ion-item lines="none" class="ion-margin-bottom">                                   <!-- Item row without bottom line -->
+      <ion-avatar slot="start">                                                         <!-- Avatar on the left side -->
         <!-- ✅ Use absolute URL + cache busting -->
-        <img [src]="avatarSrc(u)" alt="avatar" />
+        <img [src]="avatarSrc(u)" alt="avatar" />                                       <!-- Avatar image bound to computed URL -->
       </ion-avatar>
-      <ion-label>
-        <h2>{{ u.nom }}</h2>
-        <p>{{ u.email }}</p>
-        <p>Rôle : {{ u.role }}</p>
+      <ion-label>                                                                       <!-- Text block next to avatar -->
+        <h2>{{ u.nom }}</h2>                                                            <!-- User name -->
+        <p>{{ u.email }}</p>                                                            <!-- User email -->
+        <p>Rôle : {{ u.role }}</p>                                                      <!-- User role (read-only) -->
       </ion-label>
     </ion-item>
 
     <!-- ✅ Only one button: Camera/Gallery chooser -->
-    <ion-button expand="block" type="button" (click)="changePhoto()">
-      <ion-icon slot="start" name="camera"></ion-icon>
-      Changer la photo
+    <ion-button expand="block" type="button" (click)="changePhoto()">                   <!-- Full-width button to change avatar -->
+      <ion-icon slot="start" name="camera"></ion-icon>                                  <!-- Camera icon at start -->
+      Changer la photo                                                                  <!-- Button label -->
     </ion-button>
 
     <!-- Edit form -->
-    <ion-list class="ion-margin-top" [formGroup]="form">
-      <ion-item>
-        <ion-icon slot="start" name="person"></ion-icon>
-        <ion-input label="Nom" labelPlacement="stacked" formControlName="nom"></ion-input>
+    <ion-list class="ion-margin-top" [formGroup]="form">                                 <!-- Form list bound to reactive form -->
+      <ion-item>                                                                         <!-- Name row -->
+        <ion-icon slot="start" name="person"></ion-icon>                                 <!-- Person icon -->
+        <ion-input label="Nom" labelPlacement="stacked" formControlName="nom"></ion-input> <!-- Stacked label + input -->
       </ion-item>
       <ion-note color="danger" *ngIf="form.get('nom')?.touched && form.get('nom')?.invalid">
-        Nom requis (min 2 caractères).
+        Nom requis (min 2 caractères).                                                   <!-- Validation hint -->
       </ion-note>
 
-      <ion-item>
-        <ion-icon slot="start" name="mail"></ion-icon>
-        <ion-input type="email" label="Email" labelPlacement="stacked" formControlName="email"></ion-input>
+      <ion-item>                                                                         <!-- Email row -->
+        <ion-icon slot="start" name="mail"></ion-icon>                                   <!-- Mail icon -->
+        <ion-input type="email" label="Email" labelPlacement="stacked" formControlName="email"></ion-input> <!-- Email input -->
       </ion-item>
       <ion-note color="danger" *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
-        Email invalide.
+        Email invalide.                                                                  <!-- Validation hint -->
       </ion-note>
 
-      <ion-item>
-        <ion-icon slot="start" name="lock-closed"></ion-icon>
-        <ion-input
-          type="password"
-          label="Nouveau mot de passe (optionnel)"
+      <ion-item>                                                                         <!-- Password row -->
+        <ion-icon slot="start" name="lock-closed"></ion-icon>                            <!-- Lock icon -->
+        <ion-input                                                                       
+          type="password"                                                                
+          label="Nouveau mot de passe (optionnel)"                                      
           labelPlacement="stacked"
-          formControlName="password"
-          placeholder="Laisser vide pour ne pas changer">
+          formControlName="password"                                                     
+          placeholder="Laisser vide pour ne pas changer">      <!-- Password input type -->         <!-- Stacked label -->          <!-- Binds to 'password' control -->           <!-- Helper placeholder -->
         </ion-input>
       </ion-item>
 
       <!-- Role shown in read-only (control disabled in TS) -->
-      <ion-item>
-        <ion-input label="Rôle" labelPlacement="stacked" formControlName="role"></ion-input>
+      <ion-item>                                                                         <!-- Role row (read-only via disabled control) -->
+        <ion-input label="Rôle" labelPlacement="stacked" formControlName="role"></ion-input> <!-- Displays current role -->
       </ion-item>
     </ion-list>
 
-    <ion-button class="ion-margin-top" expand="block" type="button" (click)="save()">
-      <ion-icon slot="start" name="save"></ion-icon>
-      Enregistrer
+    <ion-button class="ion-margin-top" expand="block" type="button" (click)="save()">    <!-- Save button triggers save() -->
+      <ion-icon slot="start" name="save"></ion-icon>                                     <!-- Save icon -->
+      Enregistrer                                                                        <!-- Button label -->
     </ion-button>
   </ng-container>
 
-  <ng-template #loadingUser>
-    <p>Chargement…</p>
+  <ng-template #loadingUser>                                                             <!-- Fallback template while user not loaded -->
+    <p>Chargement…</p>                                                                   <!-- Simple loading text -->
   </ng-template>
 </ion-content>
