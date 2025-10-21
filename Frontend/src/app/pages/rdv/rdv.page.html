@@ -2,7 +2,7 @@
   <ion-toolbar>
     <ion-title>Rendez-vous</ion-title>
 
-    <!-- segment only for PRO -->
+    <!-- Segment (PRO only) -->
     <ion-segment
       slot="end"
       *ngIf="role === 'PROFESSIONNEL'"
@@ -18,26 +18,32 @@
 <ion-content class="ion-padding">
   <ion-note color="danger" *ngIf="errorMsg">{{ errorMsg }}</ion-note>
 
-  <!-- CLIENT VIEW -->
+  <!-- CLIENT VIEW: grouped by day -->
   <ng-container *ngIf="role === 'CLIENT'">
-    <ion-note *ngIf="!clientList.length">Aucun rendez-vous.</ion-note>
-    <ion-list *ngIf="clientList.length">
-      <ion-item *ngFor="let r of clientList">
-        <ion-icon slot="start" name="calendar"></ion-icon>
-        <ion-label>
-          <div>{{ asDate(r.date) | date:'mediumDate' }} à {{ r.heure }} — <strong>{{ r.statut }}</strong></div>
-        </ion-label>
-        <ion-buttons slot="end">
-          <ion-button color="warning" size="small" (click)="cancel(r)" *ngIf="isPending(r)">Annuler</ion-button>
-          <ion-button color="danger" size="small" (click)="deleteCancelled(r)" *ngIf="isCancelled(r)">Supprimer</ion-button>
-        </ion-buttons>
-      </ion-item>
-    </ion-list>
+    <ng-container *ngIf="clientList.length; else noClientRdv">
+      <ng-container *ngFor="let g of groupsClient()">
+        <h3 class="ion-margin-top ion-padding-start">{{ g[0] | date:'fullDate' }}</h3>
+        <ion-list>
+          <ion-item *ngFor="let r of g[1]">
+            <ion-icon slot="start" name="calendar"></ion-icon>
+            <ion-label>
+              <b>{{ r.heure }}</b> — {{ r.statut }}
+            </ion-label>
+            <ion-buttons slot="end">
+              <ion-button color="warning" size="small" (click)="cancel(r)" *ngIf="isPending(r)">Annuler</ion-button>
+              <ion-button color="danger" size="small" (click)="deleteCancelled(r)" *ngIf="isCancelled(r)">Supprimer</ion-button>
+            </ion-buttons>
+          </ion-item>
+        </ion-list>
+      </ng-container>
+    </ng-container>
+    <ng-template #noClientRdv>
+      <ion-note>Aucun rendez-vous.</ion-note>
+    </ng-template>
   </ng-container>
 
-  <!-- PRO VIEW -->
+  <!-- PRO VIEW (unchanged, still grouped in “Tous”) -->
   <ng-container *ngIf="role === 'PROFESSIONNEL'">
-    <!-- pending -->
     <ion-list *ngIf="segment() === 'pending'">
       <ion-item *ngFor="let r of proPending">
         <ion-icon slot="start" name="time"></ion-icon>
@@ -52,7 +58,6 @@
       <ion-note *ngIf="!proPending.length">Aucun RDV en attente.</ion-note>
     </ion-list>
 
-    <!-- confirmed -->
     <ion-list *ngIf="segment() === 'confirmed'">
       <ion-item *ngFor="let r of proConfirmed">
         <ion-icon slot="start" name="checkmark-circle"></ion-icon>
@@ -64,9 +69,8 @@
       <ion-note *ngIf="!proConfirmed.length">Aucun RDV confirmé.</ion-note>
     </ion-list>
 
-    <!-- all (grouped by day) -->
     <ng-container *ngIf="segment() === 'all'">
-      <ng-container *ngFor="let g of groups()">
+      <ng-container *ngFor="let g of groupsPro()">
         <h3 class="ion-margin-top ion-padding-start">{{ g[0] | date:'fullDate' }}</h3>
         <ion-list>
           <ion-item *ngFor="let r of g[1]">

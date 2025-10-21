@@ -2,7 +2,7 @@
 <ion-menu menuId="mainMenu" contentId="main-content" type="overlay">
   <ion-header>
     <ion-toolbar>
-      <ion-title>{{ title() }}</ion-title>
+      <ion-title>{{ roleLabel() }}</ion-title>
     </ion-toolbar>
   </ion-header>
 
@@ -18,33 +18,38 @@
   </ion-content>
 </ion-menu>
 
-<!-- Main -->
+<!-- Main header -->
 <ion-header>
   <ion-toolbar>
     <ion-buttons slot="start">
-      <!-- ⬇️ explicitly target the menu -->
       <ion-menu-button [menu]="'mainMenu'"></ion-menu-button>
     </ion-buttons>
 
-    <ion-title>{{ header() }}</ion-title>
+    <!-- Two-line title -->
+    <ion-title class="app-title">
+      <div class="title">{{ roleLabel() }}</div>
+      <div class="subtitle">ID : {{ userId }}</div>
+    </ion-title>
 
     <ion-buttons slot="end">
-      <!-- Bell in top bar -->
-      <ion-button class="notif-btn" [routerLink]="notifLink()">
-        <ion-icon slot="icon-only" name="notifications"></ion-icon>
-        <ion-badge class="notif-badge" *ngIf="unread() > 0" color="danger">{{ unread() }}</ion-badge>
-      </ion-button>
-
-      <!-- find a pro -->
-      <ion-button *ngIf="role() === 'CLIENT'" routerLink="/client/pros">
-        <ion-icon slot="start" name="people"></ion-icon>
-        Trouver un pro
-      </ion-button>
-
+      <!-- ✅ Bonjour FIRST -->
       <ion-button fill="clear" disabled="true" style="pointer-events:none;">
         BONJOUR {{ userName || '' }}
       </ion-button>
 
+      <!-- ✅ search icon for “Trouver un pro” -->
+      <ion-button *ngIf="role() === 'CLIENT'" routerLink="/client/pros">
+        <ion-icon slot="start" name="search"></ion-icon>
+        Trouver un docteur
+      </ion-button>
+
+      <!-- then bell -->
+      <ion-button class="notif-btn" [routerLink]="notifLink">
+        <ion-icon slot="icon-only" name="notifications"></ion-icon>
+        <ion-badge class="notif-badge" *ngIf="unread() > 0" color="danger">{{ unread() }}</ion-badge>
+      </ion-button>
+
+      <!-- logout last -->
       <ion-button (click)="logout()">
         <ion-icon slot="start" name="log-out"></ion-icon>
         LOGOUT
@@ -53,7 +58,6 @@
   </ion-toolbar>
 </ion-header>
 
-<!-- Must match contentId above -->
 <ion-content id="main-content" [fullscreen]="true">
   <router-outlet></router-outlet>
 </ion-content>

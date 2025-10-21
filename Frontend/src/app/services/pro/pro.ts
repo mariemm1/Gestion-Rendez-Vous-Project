@@ -5,11 +5,17 @@ import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 import { Professionnel } from '../../models/pro/pro';
 
+export interface PublicDayDispoResponse {
+  date: string; // YYYY-MM-DD
+  windows: Array<{ _id: string; heure_debut: string; heure_fin: string }>;
+  hoursTaken: string[]; // ["HH:mm", ...]
+}
+
 @Injectable({ providedIn: 'root' })
 export class ProService {
   private base = `${environment.apiUrl}/prof`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   // ------------ ADMIN ------------
   create(data: { nom: string; email: string; pwd: string; specialite: string; disponibilites?: { date: string; heure_debut: string; heure_fin: string }[] }) {
@@ -18,7 +24,6 @@ export class ProService {
   getAll(): Observable<Professionnel[]> {
     return this.http.get<Professionnel[]>(`${this.base}/all`);
   }
-  // backend now uses non-ambiguous paths
   getByNom(nom: string): Observable<Professionnel> {
     return this.http.get<Professionnel>(`${this.base}/by-nom/${encodeURIComponent(nom)}`);
   }
@@ -34,21 +39,26 @@ export class ProService {
     return this.http.get<Array<{ _id: string; userId: string; nom: string; email: string; specialite: string }>>(`${this.base}/public`);
   }
 
+  /** ⬇️ RAW windows for a single day (public endpoint) */
+  getPublicDayDisponibilites(userId: string, date: string) {
+    // date is YYYY-MM-DD
+    return this.http.get<PublicDayDispoResponse>(`${this.base}/public/${encodeURIComponent(userId)}/disponibilites`, {
+      params: { date }
+    });
+  }
+
   // ------------ PRO (SELF windows) ------------
-  /** Add one or many windows for the connected professional */
   addMyDisponibilites(windows: { date: string; heure_debut: string; heure_fin: string }[]) {
     return this.http.post(`${this.base}/me/disponibilites`, { windows });
   }
-  /** List raw windows for the connected professional */
   getMyDisponibilites(): Observable<Array<{ _id: string; date: string; heure_debut: string; heure_fin: string }>> {
     return this.http.get<Array<{ _id: string; date: string; heure_debut: string; heure_fin: string }>>(`${this.base}/me/disponibilites`);
   }
-  /** Delete one window by its id */
   deleteMyDisponibilite(dispoId: string) {
     return this.http.delete(`${this.base}/me/disponibilites/${encodeURIComponent(dispoId)}`);
   }
 
-  // computed free slots (windows minus RDVs)
+  // (Keep these if used elsewhere)
   getDisponibilites(userId: string, params?: { from?: string; to?: string; step?: number }) {
     const q = new URLSearchParams();
     if (params?.from) q.set('from', params.from);
@@ -59,10 +69,19 @@ export class ProService {
       `${this.base}/${encodeURIComponent(userId)}/disponibilites${qs}`
     );
   }
-
-  // alias so components can call either name
-  // ------------ ANY (computed free slots for a pro) ------------
   getComputedDisponibilites(userId: string, params?: { from?: string; to?: string; step?: number }) {
     return this.getDisponibilites(userId, params);
   }
+
+  /** Public: raw availability windows (exactly what the pro registered) */
+  getPublicWindows(userId: string, params?: { from?: string; to?: string }) {
+    const q = new URLSearchParams();
+    if (params?.from) q.set('from', params.from);
+    if (params?.to) q.set('to', params.to);
+    const qs = q.toString() ? `?${q.toString()}` : '';
+    return this.http.get<Array<{ date: string; heure_debut: string; heure_fin: string }>>(
+      `${this.base}/public/${encodeURIComponent(userId)}/windows${qs}`
+    );
+  }
+
 }

@@ -40,6 +40,52 @@ router.get("/public", async (req, res) => {
 });
 
 /* ==========================================================
+ * PUBLIC: raw availability windows of a pro (by userId)
+ * GET /prof/public/:userId/windows?from=YYYY-MM-DD&to=YYYY-MM-DD
+ * Returns [{ date: 'YYYY-MM-DD', heure_debut: 'HH:mm', heure_fin: 'HH:mm' }, ...]
+ * ========================================================== */
+router.get("/public/:userId/windows", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { from, to } = req.query;
+
+    const pro = await Professionnel.findOne({ userId });
+    if (!pro) return res.status(404).json({ message: "Professionnel non trouvé" });
+
+    const mkDayStart = (ymd) => {
+      const d = new Date(ymd);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate()); // 00:00 local
+    };
+    const fromStart = from ? mkDayStart(from) : null;
+    const toNext =
+      to
+        ? (() => { const t = mkDayStart(to); t.setDate(t.getDate() + 1); return t; })()
+        : null;
+
+    // Filter raw windows in [fromStart, toNext)
+    const out = (pro.disponibilites || [])
+      .filter(w => {
+        const wd = new Date(w.date);
+        return (!fromStart || wd >= fromStart) && (!toNext || wd < toNext);
+      })
+      .map(w => ({
+        date: new Date(w.date).toISOString().substring(0, 10),
+        heure_debut: w.heure_debut,
+        heure_fin: w.heure_fin,
+      }))
+      // sort by date + start time for a nice UI
+      .sort((a, b) => a.date === b.date
+        ? a.heure_debut.localeCompare(b.heure_debut)
+        : a.date.localeCompare(b.date));
+
+    res.json(out);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+});
+
+
+/* ==========================================================
  * PUBLIC: disponibilités d’un pro (par userId) + booked info
  * GET /prof/public/:userId/disponibilites?date=YYYY-MM-DD
  * ========================================================== */

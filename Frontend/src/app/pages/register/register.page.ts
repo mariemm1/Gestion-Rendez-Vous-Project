@@ -6,9 +6,11 @@ import {
   IonButton, IonIcon, IonSelect, IonSelectOption, IonNote, IonList
 } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../services/auth/auth';
 import { addIcons } from 'ionicons';
 import { personAdd, person, mail, lockClosed, briefcase } from 'ionicons/icons';
+
+import { AuthService } from '../../services/auth/auth';
+import { UiService } from '../../services/ui/ui.service'; // <-- no ".ts" in import path!
 
 @Component({
   selector: 'app-register',
@@ -23,27 +25,24 @@ import { personAdd, person, mail, lockClosed, briefcase } from 'ionicons/icons';
   ],
 })
 export class RegisterPage {
-  // Toggle password visibility (button uses text instead of icon here)
   showPwd = false;
-  // API error holder
   errorMsg = '';
 
-  // Allowed roles (must match backend)
   roleOptions: Array<'CLIENT' | 'PROFESSIONNEL' | 'ADMIN'> = ['CLIENT', 'PROFESSIONNEL', 'ADMIN'];
 
-  // Reactive form; note pwd (not password) to match backend register DTO
   form = this.fb.group({
     nom: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
     pwd: ['', [Validators.required, Validators.minLength(6)]],
     role: ['CLIENT', [Validators.required]],
-    specialite: [''], // only required for PROFESSIONNEL
+    specialite: [''],
   });
 
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    private ui: UiService
   ) {
     addIcons({ personAdd, person, mail, lockClosed, briefcase });
   }
@@ -54,26 +53,22 @@ export class RegisterPage {
   get role()       { return this.form.get('role'); }
   get specialite() { return this.form.get('specialite'); }
 
-  // Helper: are we creating a professional?
-  isPro(): boolean {
-    return this.role?.value === 'PROFESSIONNEL';
-  }
+  isPro(): boolean { return this.role?.value === 'PROFESSIONNEL'; }
 
-  // Submit registration; then redirect to login
-  submit() {
+  async submit() {
     this.errorMsg = '';
 
-    // Enforce 'specialite' only when PRO
+    // Require specialité for PRO
     if (this.isPro()) {
       this.specialite?.addValidators([Validators.required, Validators.minLength(2)]);
-      this.specialite?.updateValueAndValidity();
     } else {
       this.specialite?.clearValidators();
-      this.specialite?.updateValueAndValidity();
     }
+    this.specialite?.updateValueAndValidity();
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      await this.ui.warn('Veuillez corriger les erreurs.');
       return;
     }
 
@@ -81,12 +76,15 @@ export class RegisterPage {
       nom: string; email: string; pwd: string; role: 'CLIENT'|'PROFESSIONNEL'|'ADMIN'; specialite?: string;
     };
 
-    this.auth.register(dto).subscribe({
-      next: () => this.router.navigateByUrl('/login'),
-      error: (err) => this.errorMsg = err?.error?.message || 'Inscription échouée'
-    });
+    try {
+      await this.ui.withLoading(() => this.auth.register(dto).toPromise(), 'Création du compte...');
+      await this.ui.success('Inscription réussie');
+      this.router.navigateByUrl('/login');
+    } catch (err: any) {
+      this.errorMsg = err?.error?.message || 'Inscription échouée';
+      await this.ui.error(this.errorMsg);
+    }
   }
 
-  // Safe navigation back to login (prevents form submit)
   goLogin() { this.router.navigateByUrl('/login'); }
 }

@@ -8,6 +8,13 @@ const notificationRoutes = require("./routes/notifications.route");
 const profRoutes = require("./routes/professionel.route");
 const cronRoutes = require("./cron/cronJobs");
 const AdminRoutes = require("./routes/admin.route");
+const path = require('path');
+const mediaRoutes = require("./routes/media.route");
+
+
+
+
+
 const cors = require('cors');
 
 const app = express();
@@ -25,7 +32,10 @@ app.use("/auth", AuthRoutes);
 app.use("/rendezVous", RendezVousRoutes);
 app.use("/notification", notificationRoutes);
 app.use("/prof", profRoutes);
-app.use("/admin", AdminRoutes)
+app.use("/admin", AdminRoutes);
+app.use("/media", mediaRoutes);                       
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // serve files
+
 
 
 // Ajouter la route pour tester le cron job manuellement

@@ -1,33 +1,42 @@
-// src/app/services/notification/notifications.service.ts
+// Frontend/src/app/services/notification/notifications.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, map, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Observable } from 'rxjs';
 import { Notification } from '../../models/notification/notification';
-
-
 
 @Injectable({ providedIn: 'root' })
 export class NotificationsService {
   private base = `${environment.apiUrl}/notification`;
 
+  private _unread$ = new BehaviorSubject<number>(0);
+  /** Shared unread badge count observable */
+  unread$ = this._unread$.asObservable();
+
   constructor(private http: HttpClient) {}
 
-  // list current user's notifications
-  listForUser(userId: string): Observable<Notification[]> {
+  /** List all notifications for a user (client or pro). */
+  listForUser(userId: string) {
     return this.http.get<Notification[]>(`${this.base}/${userId}`);
   }
 
-  // add a notification (usually server-driven, but exposed here if you need it)
-  add(n: { utilisateur_id: string; role: 'CLIENT' | 'PROFESSIONNEL'; type: string; message: string }) {
-    return this.http.post(`${this.base}/add`, n);
+  /** Recompute and push unread count (safe on null/undefined). */
+  refreshUnread(userId?: string | null) {
+    if (!userId) return;
+    this.listForUser(userId)
+      .pipe(map(list => (list || []).filter(n => !n.lue).length))
+      .subscribe(count => this._unread$.next(count));
   }
 
-  markRead(notificationId: string) {
-    return this.http.put(`${this.base}/lire/${notificationId}`, {});
+  /** Mark one notification read, then refresh unread. */
+  markRead(notificationId: string, userIdToRefresh?: string | null) {
+    return this.http.put<{ message: string }>(`${this.base}/lire/${notificationId}`, {})
+      .pipe(tap(() => this.refreshUnread(userIdToRefresh)));
   }
 
-  delete(notificationId: string) {
-    return this.http.delete(`${this.base}/${notificationId}`);
+  /** Delete a notification, then refresh unread. */
+  delete(notificationId: string, userIdToRefresh?: string | null) {
+    return this.http.delete<{ message: string }>(`${this.base}/${notificationId}`)
+      .pipe(tap(() => this.refreshUnread(userIdToRefresh)));
   }
 }

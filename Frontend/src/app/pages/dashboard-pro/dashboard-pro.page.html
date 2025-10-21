@@ -1,42 +1,39 @@
-<ion-card>
-  <ion-card-header><ion-card-title>Espace Professionnel</ion-card-title></ion-card-header>
-  <ion-card-content>
-    Rôle: PROFESSIONNEL — ID: {{ uid }}
-  </ion-card-content>
-</ion-card>
-
-<!-- Manage availability -->
-<!-- dashboard-pro.page.html (only this change) -->
+<!-- Mes disponibilités -->
 <ion-card>
   <ion-card-header><ion-card-title>Mes disponibilités</ion-card-title></ion-card-header>
   <ion-card-content>
     Définissez vos créneaux disponibles pour permettre la prise de rendez-vous.
     <div style="margin-top:8px">
-      <!-- ✅ fix: use plural 'dispos' to match your routes -->
       <ion-button routerLink="/pro/dispos">Gérer mes disponibilités</ion-button>
     </div>
   </ion-card-content>
 </ion-card>
 
+<!-- Mes rendez-vous (counters + actions only; no list here) -->
 <ion-card>
-  <ion-card-header><ion-card-title>Rendez-vous en attente</ion-card-title></ion-card-header>
+  <ion-card-header><ion-card-title>Mes rendez-vous</ion-card-title></ion-card-header>
   <ion-card-content>
-    <div *ngIf="pending?.length; else noneP">• {{ pending.length }} en attente</div>
-    <ng-template #noneP>Aucun en attente.</ng-template>
-    <div style="margin-top:8px">
-      <ion-button size="small" (click)="goPending()">Voir la liste</ion-button>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+      <ion-chip color="medium">Tous: {{ (pending?.length || 0) + (confirmed?.length || 0) }}</ion-chip>
+      <ion-chip color="warning">En attente: {{ pending?.length || 0 }}</ion-chip>
+      <ion-chip color="success">Confirmés: {{ confirmed?.length || 0 }}</ion-chip>
+    </div>
+
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <ion-button size="small" (click)="goPending()">Voir « en attente »</ion-button>
+      <ion-button size="small" (click)="goConfirmed()">Voir « confirmés »</ion-button>
+      <ion-button size="small" fill="outline" (click)="goAll()">Voir tous</ion-button>
     </div>
   </ion-card-content>
 </ion-card>
 
-
+<!-- Aujourd’hui -->
 <ion-card>
-  <ion-card-header><ion-card-title>Rendez-vous confirmés</ion-card-title></ion-card-header>
+  <ion-card-header><ion-card-title>Mes rendez-vous aujourd’hui</ion-card-title></ion-card-header>
   <ion-card-content>
-    <div *ngIf="confirmed?.length; else noneC">• {{ confirmed.length }} confirmés</div>
-    <ng-template #noneC>Aucun confirmé.</ng-template>
-    <div style="margin-top:8px">
-      <ion-button size="small" (click)="goConfirmed()">Voir la liste</ion-button>
-    </div>
+    <ng-container *ngIf="today?.length; else noneToday">
+      <div *ngFor="let r of today" class="line">• {{ r.heure }} — <b>{{ r.statut }}</b></div>
+    </ng-container>
+    <ng-template #noneToday>Aucun rendez-vous aujourd’hui.</ng-template>
   </ion-card-content>
 </ion-card>
