@@ -1,35 +1,45 @@
+<!-- Frontend/src/app/pages/notif/notif.page.html -->
+
 <ion-header>
   <ion-toolbar>
-    <ion-title>Notifications</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="load()">
-        <ion-icon name="notifications-outline"></ion-icon>
+    <ion-title>Notifications</ion-title>                 <!-- Page title -->
+    <ion-buttons slot="end">                             <!-- Buttons on the right of the toolbar -->
+      <ion-button (click)="load()">                      <!-- Manual reload button -->
+        <ion-icon name="notifications-outline"></ion-icon> <!-- Bell icon -->
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
+  <!-- Pull-to-refresh container; emits (ionRefresh) with event -->
   <ion-refresher slot="fixed" (ionRefresh)="load($event)">
-    <ion-refresher-content></ion-refresher-content>
+    <ion-refresher-content></ion-refresher-content>     <!-- Uses default refresher visuals -->
   </ion-refresher>
 
+  <!-- Display any error from the last load attempt -->
   <ion-note color="danger" *ngIf="errorMsg">{{ errorMsg }}</ion-note>
+
+  <!-- Placeholder when not loading and list is empty -->
   <ion-note *ngIf="!loading && !items.length">Aucune notification.</ion-note>
 
+  <!-- Main list of notifications -->
   <ion-list *ngIf="items.length">
+    <!-- Iterate notifications -->
     <ion-item *ngFor="let n of items">
-      <ion-label>
-        <div class="ion-text-wrap">{{ n.message }}</div>
-        <small>{{ asDate(n.dateEnvoi) | date:'short' }} • {{ n.type }}</small>
+      <ion-label>                                         <!-- Main content column -->
+        <div class="ion-text-wrap">{{ n.message }}</div>  <!-- Notification message -->
+        <small>{{ asDate(n.dateEnvoi) | date:'short' }} • {{ n.type }}</small> <!-- Date + type -->
       </ion-label>
 
+      <!-- Badge indicates read/unread state -->
       <ion-chip [color]="n.lue ? 'medium' : 'primary'" slot="end">
         {{ n.lue ? 'Lue' : 'Non lue' }}
       </ion-chip>
 
+      <!-- Row actions: mark as read, delete -->
       <ion-buttons slot="end">
-        <ion-button size="small" (click)="markRead(n)" [disabled]="n.lue">
+        <ion-button size="small" (click)="markRead(n)" [disabled]="n.lue"> <!-- Disabled if already read -->
           <ion-icon name="checkmark-done"></ion-icon>
         </ion-button>
         <ion-button color="danger" size="small" (click)="remove(n)">

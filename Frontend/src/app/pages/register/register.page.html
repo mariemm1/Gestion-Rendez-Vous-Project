@@ -1,87 +1,88 @@
+<!-- src/app/pages/register/register.page.html -->
 <ion-header>
   <ion-toolbar>
-    <ion-title>Inscription</ion-title>
+    <ion-title>Inscription</ion-title> <!-- Page title -->
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
-  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate> <!-- Binds reactive form + submit handler -->
     <ion-list>
       <!-- Name -->
       <ion-item>
-        <ion-icon slot="start" name="person"></ion-icon>
+        <ion-icon slot="start" name="person"></ion-icon> <!-- Leading icon -->
         <ion-input
-          label="Nom"
+          label="Nom"                                     
           labelPlacement="stacked"
-          formControlName="nom"
-          placeholder="Votre nom">
+          formControlName="nom"                           
+          placeholder="Votre nom"> <!-- Stacked label --> <!-- Binds to 'nom' control -->
         </ion-input>
       </ion-item>
-      <ion-note color="danger" *ngIf="nom?.touched && nom?.invalid">
+      <ion-note color="danger" *ngIf="nom?.touched && nom?.invalid"> <!-- Error note when invalid -->
         Nom requis (min 2 caractères).
       </ion-note>
 
       <!-- Email -->
       <ion-item>
-        <ion-icon slot="start" name="mail"></ion-icon>
+        <ion-icon slot="start" name="mail"></ion-icon>    <!-- Leading icon -->
         <ion-input
-          type="email"
+          type="email"                                    
           label="Email"
           labelPlacement="stacked"
-          formControlName="email"
-          placeholder="you@example.com">
+          formControlName="email"                        
+          placeholder="you@example.com"><!-- HTML5 email input -->  <!-- Binds to 'email' control -->
         </ion-input>
       </ion-item>
-      <ion-note color="danger" *ngIf="email?.touched && email?.invalid">
+      <ion-note color="danger" *ngIf="email?.touched && email?.invalid"> <!-- Email validation note -->
         Email valide requis.
       </ion-note>
 
       <!-- Password (uses 'pwd' to match backend register) -->
       <ion-item>
-        <ion-icon slot="start" name="lock-closed"></ion-icon>
+        <ion-icon slot="start" name="lock-closed"></ion-icon> <!-- Leading icon -->
         <ion-input
-          [type]="showPwd ? 'text' : 'password'"
+          [type]="showPwd ? 'text' : 'password'"         
           label="Mot de passe"
           labelPlacement="stacked"
-          formControlName="pwd"
-          placeholder="••••••••">
+          formControlName="pwd"                          
+          placeholder="••••••••"> <!-- Toggle visibility -->  <!-- Binds to 'pwd' (backend expects 'pwd') -->
         </ion-input>
-        <ion-button fill="clear" size="small" type="button" (click)="showPwd = !showPwd">
+        <ion-button fill="clear" size="small" type="button" (click)="showPwd = !showPwd"> <!-- Toggle button -->
           {{ showPwd ? 'Masquer' : 'Afficher' }}
         </ion-button>
       </ion-item>
-      <ion-note color="danger" *ngIf="pwd?.touched && pwd?.invalid">
+      <ion-note color="danger" *ngIf="pwd?.touched && pwd?.invalid"> <!-- Password validation note -->
         Mot de passe (min 6 caractères).
       </ion-note>
 
       <!-- Role -->
       <ion-item>
-        <ion-label position="stacked">Rôle</ion-label>
-        <ion-select formControlName="role" interface="popover">
-          <ion-select-option *ngFor="let r of roleOptions" [value]="r">{{ r }}</ion-select-option>
+        <ion-label position="stacked">Rôle</ion-label>    <!-- Label for select -->
+        <ion-select formControlName="role" interface="popover"> <!-- Role dropdown -->
+          <ion-select-option *ngFor="let r of roleOptions" [value]="r">{{ r }}</ion-select-option> <!-- Options -->
         </ion-select>
       </ion-item>
 
       <!-- Speciality (PRO only) -->
-      <ion-item *ngIf="isPro()">
+      <ion-item *ngIf="isPro()">                           <!-- Only show when role is PROFESSIONNEL -->
         <ion-icon slot="start" name="briefcase"></ion-icon>
         <ion-input
           label="Spécialité"
           labelPlacement="stacked"
-          formControlName="specialite"
-          placeholder="Cardiologue, Dentiste...">
+          formControlName="specialite"                    
+          placeholder="Cardiologue, Dentiste..."> <!-- Binds to 'specialite' -->
         </ion-input>
       </ion-item>
-      <ion-note color="danger" *ngIf="isPro() && specialite?.touched && specialite?.invalid">
+      <ion-note color="danger" *ngIf="isPro() && specialite?.touched && specialite?.invalid"> <!-- Validation note for PRO -->
         Spécialité requise pour un professionnel (min 2 caractères).
       </ion-note>
     </ion-list>
 
     <!-- Backend error -->
-    <ion-note color="danger" *ngIf="errorMsg" class="ion-margin-top">{{ errorMsg }}</ion-note>
+    <ion-note color="danger" *ngIf="errorMsg" class="ion-margin-top">{{ errorMsg }}</ion-note> <!-- Shows API error -->
 
     <!-- Submit -->
-    <ion-button expand="block" class="ion-margin-top" type="submit">
+    <ion-button expand="block" class="ion-margin-top" type="submit"> <!-- Submit triggers (ngSubmit) -->
       <ion-icon slot="start" name="person-add"></ion-icon>
       Créer un compte
     </ion-button>

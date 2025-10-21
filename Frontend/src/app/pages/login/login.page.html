@@ -1,3 +1,4 @@
+<!-- src/app/pages/login/login.page.html -->
 <ion-header>
   <ion-toolbar>
     <ion-title>Connexion</ion-title>
@@ -7,14 +8,11 @@
 <ion-content class="ion-padding">
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <ion-list>
+
       <!-- Email -->
       <ion-item>
         <ion-icon slot="start" name="mail"></ion-icon>
-        <ion-input
-          formControlName="email"
-          type="email"
-          label="Email"
-          labelPlacement="stacked"
+        <ion-input formControlName="email" type="email" label="Email" label-placement="stacked"
           placeholder="you@example.com">
         </ion-input>
       </ion-item>
@@ -25,12 +23,8 @@
       <!-- Password -->
       <ion-item>
         <ion-icon slot="start" name="lock-closed"></ion-icon>
-        <ion-input
-          formControlName="password"
-          [type]="showPwd ? 'text' : 'password'"
-          label="Mot de passe"
-          labelPlacement="stacked"
-          placeholder="••••••••">
+        <ion-input formControlName="password" [type]="showPwd ? 'text' : 'password'" label="Mot de passe"
+          label-placement="stacked" placeholder="••••••••">
         </ion-input>
         <!-- Just toggles; does not submit the form -->
         <ion-button fill="clear" size="small" type="button" (click)="showPwd = !showPwd">
@@ -40,6 +34,7 @@
       <ion-note color="danger" *ngIf="password?.touched && password?.invalid">
         Mot de passe (min 6 caractères).
       </ion-note>
+
     </ion-list>
 
     <!-- Backend error -->
@@ -51,9 +46,8 @@
       Se connecter
     </ion-button>
 
-    <!-- Navigate to register: MUST be type="button" so the form doesn't submit -->
-    <ion-button expand="block" fill="clear" type="button" (click)="goRegister()"
-                routerDirection="forward">
+    <!-- Navigate to register -->
+    <ion-button expand="block" fill="clear" type="button" (click)="goRegister()" routerDirection="forward">
       Créer un compte
     </ion-button>
   </form>

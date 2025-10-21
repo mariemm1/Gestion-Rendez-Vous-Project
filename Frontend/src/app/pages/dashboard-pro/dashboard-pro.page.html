@@ -1,9 +1,12 @@
 <!-- Mes disponibilités -->
 <ion-card>
+  <!-- Card header with title -->
   <ion-card-header><ion-card-title>Mes disponibilités</ion-card-title></ion-card-header>
   <ion-card-content>
+    <!-- Helper text explaining what this section is for -->
     Définissez vos créneaux disponibles pour permettre la prise de rendez-vous.
     <div style="margin-top:8px">
+      <!-- Button to go manage availability windows -->
       <ion-button routerLink="/pro/dispos">Gérer mes disponibilités</ion-button>
     </div>
   </ion-card-content>
@@ -11,17 +14,26 @@
 
 <!-- Mes rendez-vous (counters + actions only; no list here) -->
 <ion-card>
+  <!-- Section header -->
   <ion-card-header><ion-card-title>Mes rendez-vous</ion-card-title></ion-card-header>
   <ion-card-content>
+    <!-- Chip row showing basic counters (all/pending/confirmed) -->
     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+      <!-- Total = pending + confirmed; safe fallbacks with || 0 -->
       <ion-chip color="medium">Tous: {{ (pending?.length || 0) + (confirmed?.length || 0) }}</ion-chip>
+      <!-- Pending count -->
       <ion-chip color="warning">En attente: {{ pending?.length || 0 }}</ion-chip>
+      <!-- Confirmed count -->
       <ion-chip color="success">Confirmés: {{ confirmed?.length || 0 }}</ion-chip>
     </div>
 
+    <!-- Action buttons to open the unified RDV page with a specific tab -->
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <!-- Jump to "pending" tab -->
       <ion-button size="small" (click)="goPending()">Voir « en attente »</ion-button>
+      <!-- Jump to "confirmed" tab -->
       <ion-button size="small" (click)="goConfirmed()">Voir « confirmés »</ion-button>
+      <!-- Jump to "all" tab -->
       <ion-button size="small" fill="outline" (click)="goAll()">Voir tous</ion-button>
     </div>
   </ion-card-content>
@@ -29,11 +41,15 @@
 
 <!-- Aujourd’hui -->
 <ion-card>
+  <!-- Header for today's appointments section -->
   <ion-card-header><ion-card-title>Mes rendez-vous aujourd’hui</ion-card-title></ion-card-header>
   <ion-card-content>
+    <!-- If there are RDVs today, list them; otherwise show the fallback template -->
     <ng-container *ngIf="today?.length; else noneToday">
+      <!-- Print each today's RDV with time and status -->
       <div *ngFor="let r of today" class="line">• {{ r.heure }} — <b>{{ r.statut }}</b></div>
     </ng-container>
+    <!-- Fallback when there are no RDVs today -->
     <ng-template #noneToday>Aucun rendez-vous aujourd’hui.</ng-template>
   </ion-card-content>
 </ion-card>

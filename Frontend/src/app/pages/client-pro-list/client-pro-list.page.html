@@ -1,17 +1,26 @@
+<!-- src/app/pages/client-pro-list/client-pro-list.page.html -->
+
+<!-- En-tête (barre supérieure) -->
 <ion-header>
   <ion-toolbar>
-    <ion-title>Professionnels</ion-title>
+    <ion-title>Professionnels</ion-title> <!-- Titre de la page -->
   </ion-toolbar>
 </ion-header>
 
+<!-- Contenu principal avec marge intérieure -->
 <ion-content class="ion-padding">
+  <!-- Barre de recherche liée à la propriété q (two-way binding) -->
   <ion-searchbar [(ngModel)]="q" placeholder="Chercher (nom, spécialité)"></ion-searchbar>
+
+  <!-- Liste des professionnels (filtrés) -->
   <ion-list>
+    <!-- Un item par professionnel -->
     <ion-item button *ngFor="let p of filtered()" (click)="open(p)">
+      <!-- Zone de texte de l’item -->
       <ion-label>
-        <div><b>{{ p.nom }}</b></div>
-        <div>{{ p.specialite }}</div>
-        <div style="opacity:.7">{{ p.email }}</div>
+        <div><b>{{ p.nom }}</b></div>        <!-- Nom en gras -->
+        <div>{{ p.specialite }}</div>        <!-- Spécialité -->
+        <div style="opacity:.7">{{ p.email }}</div> <!-- Email (moins saillant) -->
       </ion-label>
     </ion-item>
   </ion-list>

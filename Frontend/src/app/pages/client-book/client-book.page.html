@@ -1,29 +1,44 @@
 <!-- src/app/pages/client-book/client-book.page.html -->
+
+<!-- En-tête de page avec une barre de titre -->
 <ion-header>
   <ion-toolbar>
     <ion-title>Réserver un rendez-vous</ion-title>
   </ion-toolbar>
 </ion-header>
 
+<!-- Contenu principal avec padding -->
 <ion-content class="ion-padding">
+  <!-- Message si aucune disponibilité chargée -->
   <ion-note *ngIf="!days.length">Aucune disponibilité trouvée.</ion-note>
 
+  <!-- Segment listant les dates disponibles ; ngModel lie la sélection -->
   <ion-segment [(ngModel)]="selectedDay" *ngIf="days.length">
+    <!-- Un bouton par jour ; value = date (YYYY-MM-DD) -->
     <ion-segment-button *ngFor="let d of days" [value]="d.date">
+      <!-- Affichage formaté de la date -->
       {{ d.date | date:'yyyy-MM-dd' }}
     </ion-segment-button>
   </ion-segment>
 
+  <!-- Titre "Disponibilités" si un jour est sélectionné -->
   <h2 class="ion-margin-top" *ngIf="selectedDay">Disponibilités</h2>
+
+  <!-- Liste des créneaux du jour sélectionné -->
   <ion-list *ngIf="selectedDay">
+    <!-- Un item par créneau -->
     <ion-item *ngFor="let s of slots()">
       <ion-label>{{ s }}</ion-label>
+      <!-- Bouton réserver ; disabled si busy/booked -->
       <ion-button slot="end" (click)="book(s)" [disabled]="isDisabled(s)">Réserver</ion-button>
     </ion-item>
+
+    <!-- Si aucun créneau pour ce jour -->
     <ion-item *ngIf="!slots().length">
       <ion-label>Aucune disponibilité pour cette date.</ion-label>
     </ion-item>
   </ion-list>
 
+  <!-- Zone de message (erreur/info) -->
   <ion-note color="primary" *ngIf="msg" class="ion-margin-top">{{ msg }}</ion-note>
 </ion-content>

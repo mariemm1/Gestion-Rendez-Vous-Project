@@ -1,34 +1,66 @@
 <!-- RDV preview (next ones only) -->
 <ion-card>
-  <ion-card-header><ion-card-title>Mes prochains rendez-vous</ion-card-title></ion-card-header>
+  <!-- Card header with the section title -->
+  <ion-card-header>
+    <ion-card-title>Mes prochains rendez-vous</ion-card-title>
+  </ion-card-header>
+
   <ion-card-content>
+    <!-- If there is at least one upcoming RDV in "rdv", render the list; otherwise show the "emptyRdv" template -->
     <ng-container *ngIf="rdv?.length; else emptyRdv">
+      <!-- Loop over the "rdv" array to print each upcoming appointment -->
       <div *ngFor="let r of rdv" class="line">
+        <!-- Bullet + formatted date (mediumDate), the hour, and the status in bold -->
         • {{ r.date | date:'mediumDate' }} à {{ r.heure }} — <b>{{ r.statut }}</b>
       </div>
     </ng-container>
-    <ng-template #emptyRdv>Aucun rendez-vous pour le moment.</ng-template>
+
+    <!-- Template shown when there are no upcoming appointments -->
+    <ng-template #emptyRdv>
+      Aucun rendez-vous pour le moment.
+    </ng-template>
   </ion-card-content>
 </ion-card>
 
 <!-- Quick actions -->
 <ion-card>
-  <ion-card-header><ion-card-title>Actions rapides</ion-card-title></ion-card-header>
+  <!-- Header for the quick actions section -->
+  <ion-card-header>
+    <ion-card-title>Actions rapides</ion-card-title>
+  </ion-card-header>
+
   <ion-card-content>
+    <!-- Container for action buttons (CSS class "actions" is for custom layout) -->
     <div class="actions">
+      <!-- Navigate to the pro search page to book a new appointment -->
       <ion-button routerLink="/client/pros">Prendre un rendez-vous</ion-button>
-      <ion-button fill="outline" routerLink="/client/rdv" class="spaced">Voir mes rendez-vous</ion-button>
+      <!-- Navigate to the client's RDV page; outlined style and extra spacing class -->
+      <ion-button fill="outline" routerLink="/client/rdv" class="spaced">
+        Voir mes rendez-vous
+      </ion-button>
     </div>
   </ion-card-content>
 </ion-card>
 
 <!-- Today RDV -->
 <ion-card>
-  <ion-card-header><ion-card-title>Mes rendez-vous aujourd’hui</ion-card-title></ion-card-header>
+  <!-- Header for today's appointments -->
+  <ion-card-header>
+    <ion-card-title>Mes rendez-vous aujourd’hui</ion-card-title>
+  </ion-card-header>
+
   <ion-card-content>
+    <!-- If there is at least one RDV in "today", render them; else show "noneToday" -->
     <ng-container *ngIf="today?.length; else noneToday">
-      <div *ngFor="let r of today" class="line">• {{ r.heure }} — <b>{{ r.statut }}</b></div>
+      <!-- Print each RDV scheduled for today: only the hour and status -->
+      <div *ngFor="let r of today" class="line">
+        • {{ r.heure }} — <b>{{ r.statut }}</b>
+      </div>
     </ng-container>
-    <ng-template #noneToday>Aucun rendez-vous aujourd’hui.</ng-template>
+
+    <!-- Template shown when no RDV is scheduled for today -->
+    <ng-template #noneToday>
+      Aucun rendez-vous aujourd’hui.
+    </ng-template>
   </ion-card-content>
 </ion-card>
